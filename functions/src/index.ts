@@ -2331,8 +2331,9 @@ Age: ${age} years old`;
           let processedJson = jsonToParse;
           if (processedJson.includes('{titles=[') && processedJson.includes(']}')) {
             // Convert {titles=[...]} to {"titles": [...]}
+            // Using [\s\S]*? instead of .*? with 's' flag for ES2017 compatibility
             processedJson = processedJson.replace(
-              /\{titles=\[(.*?)\]\}/s,
+              /\{titles=\[([\s\S]*?)\]\}/,
               '{"titles": [$1]}'
             );
             functions.logger.info("Processed malformed JSON format:", processedJson);
@@ -2374,8 +2375,9 @@ Age: ${age} years old`;
             // Apply the same preprocessing for the malformed format
             let processedCleanedJson = cleanedJson;
             if (processedCleanedJson.includes('{titles=[') && processedCleanedJson.includes(']}')) {
+              // Using [\s\S]*? instead of .*? with 's' flag for ES2017 compatibility
               processedCleanedJson = processedCleanedJson.replace(
-                /\{titles=\[(.*?)\]\}/s,
+                /\{titles=\[([\s\S]*?)\]\}/,
                 '{"titles": [$1]}'
               );
               functions.logger.info("Processed cleaned malformed JSON format:", processedCleanedJson);
