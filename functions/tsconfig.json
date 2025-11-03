@@ -11,20 +11,12 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "declaration": true,
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
-    "rootDir": "./src",
-    "typeRoots": ["./node_modules/@types"]
+    "allowSyntheticDefaultImports": true
   },
   "compileOnSave": true,
   "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "lib"
+    "src"
   ]
 }
 
