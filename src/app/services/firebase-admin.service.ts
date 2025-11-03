@@ -157,8 +157,8 @@ export class FirebaseAdminService {
       throw new Error(error);
     }
     if (!this.firestore) {
-      console.log('[FIREBASE_ADMIN] Creating new Firestore instance');
-      this.firestore = getFirestore(this.app);
+      console.log('[FIREBASE_ADMIN] Creating new Firestore instance for database: choice-story-db');
+      this.firestore = getFirestore(this.app, 'choice-story-db');
     }
     return this.firestore;
   }

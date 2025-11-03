@@ -19,7 +19,8 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const storage = getStorage(app);
-const db = getFirestore(app);
+// Use the named database 'choice-story-db'
+const db = getFirestore(app, 'choice-story-db');
 const functions = getFunctions(app);
 
 // Track emulator connection to prevent duplicate connections
@@ -29,6 +30,7 @@ let emulatorsConnected = false;
 if (process.env.NEXT_PUBLIC_USE_EMULATORS === 'true' && !emulatorsConnected) {
   try {
     connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+    // Note: Emulator uses default database, so named database won't work with emulator
     connectFirestoreEmulator(db, 'localhost', 8080);
     connectStorageEmulator(storage, 'localhost', 9199);
     connectFunctionsEmulator(functions, 'localhost', 5001);

@@ -7,6 +7,18 @@ import { OPENAI_AGENTS } from "./open-ai-agents";
 // Initialize Firebase Admin
 admin.initializeApp();
 
+// Initialize Firestore with named database
+const db = admin.firestore();
+// Configure to use the named database 'choice-story-db'
+// Note: This requires the database to exist in your Firebase project
+db.settings({ 
+  // @ts-ignore - databaseId is not in the TypeScript definitions but is supported
+  databaseId: 'choice-story-db' 
+});
+
+// Helper function to get the database instance
+const getDb = () => db;
+
 /**
  * Example HTTP Cloud Function
  * You can call this from your Next.js app or directly via HTTP
@@ -26,7 +38,7 @@ export const debugEnvironment = functions.https.onRequest(async (request, respon
     const storiesCollection = `stories_gen_${environment}`;
     
     // List all collections
-    const collections = await admin.firestore().listCollections();
+    const collections = await getDb().listCollections();
     const collectionNames = collections.map(col => col.id);
     
     // Check if the expected collection exists
@@ -39,7 +51,7 @@ export const debugEnvironment = functions.https.onRequest(async (request, respon
     
     if (storyId && expectedCollectionExists) {
       try {
-        const storyRef = admin.firestore().collection(storiesCollection).doc(storyId as string);
+        const storyRef = getDb().collection(storiesCollection).doc(storyId as string);
         const docSnapshot = await storyRef.get();
         documentExists = docSnapshot.exists;
         documentData = docSnapshot.exists ? docSnapshot.data() : null;
@@ -82,7 +94,7 @@ export const addMessage = functions.https.onCall(async (data, context) => {
   const { text } = data;
 
   // Add message to Firestore
-  const messageRef = await admin.firestore().collection("messages").add({
+  const messageRef = await getDb().collection("messages").add({
     text,
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
     uid: context.auth.uid,
@@ -263,7 +275,7 @@ Moral Disadvantages: ${disadvantages}`;
   });
 
   // Save to Firestore at the correct path
-  const storyRef = admin.firestore()
+  const storyRef = getDb()
     .collection('accounts')
     .doc(accountId)
     .collection('users')
@@ -767,7 +779,7 @@ export const generateStoryImagePrompt = functions.https.onCall(
           const storiesCollection = `stories_gen_${environment}`;
           
           // Get the document from the correct collection
-          const storyRef = admin.firestore().collection(storiesCollection).doc(storyId);
+          const storyRef = getDb().collection(storiesCollection).doc(storyId);
           const docSnapshot = await storyRef.get();
           
           if (!docSnapshot.exists) {
@@ -961,7 +973,7 @@ export const generateImagePromptAndImage = functions.runWith({
         const storiesCollection = `stories_gen_${environment}`;
         
         // Get the document from the correct collection
-        const storyRef = admin.firestore().collection(storiesCollection).doc(storyId);
+        const storyRef = getDb().collection(storiesCollection).doc(storyId);
         const docSnapshot = await storyRef.get();
         
         if (!docSnapshot.exists) {
@@ -1078,7 +1090,7 @@ export const generateKidAvatarImage = functions.runWith({
       );
 
       // Update Firestore with avatar URL
-      await admin.firestore()
+      await getDb()
         .collection('accounts')
         .doc(accountId)
         .collection('users')
@@ -1192,7 +1204,7 @@ export const generateStoryPageImage = functions.runWith({
 
         try {
           // Get the document from the correct collection
-          const storyRef = admin.firestore().collection(storiesCollection).doc(storyId);
+          const storyRef = getDb().collection(storiesCollection).doc(storyId);
           const docSnapshot = await storyRef.get();
           
           console.log("DEBUG: Document snapshot:", {
@@ -1352,7 +1364,7 @@ export const generateStoryCoverImage = functions.runWith({
       const storiesCollection = `stories_gen_${environment}`;
       
       // Get the document from the correct collection
-      const storyRef = admin.firestore().collection(storiesCollection).doc(storyId);
+      const storyRef = getDb().collection(storiesCollection).doc(storyId);
       const docSnapshot = await storyRef.get();
       
       if (!docSnapshot.exists) {
@@ -1456,7 +1468,7 @@ export const generateStoryPageImageHttp = functions.runWith({
       });
       
       // Get the document from the correct collection
-      const storyRef = admin.firestore().collection(storiesCollection).doc(storyId);
+      const storyRef = getDb().collection(storiesCollection).doc(storyId);
       const storyDoc = await storyRef.get();
       
       console.log("DEBUG: Document snapshot (HTTP):", {
@@ -1526,7 +1538,7 @@ export const generateStoryPageImageHttp = functions.runWith({
 
         // Get the story reference using storyId (environment already extracted from request.body)
         const storiesCollectionForUpdate = `stories_gen_${environment}`;
-        const storyRef = admin.firestore().collection(storiesCollectionForUpdate).doc(storyId);
+        const storyRef = getDb().collection(storiesCollectionForUpdate).doc(storyId);
 
         // Check if document exists before updating
         const docSnapshot = await storyRef.get();
@@ -1643,7 +1655,7 @@ export const generateKidAvatarImageHttp = functions.runWith({
       );
 
       // Update Firestore with avatar URL
-      await admin.firestore()
+      await getDb()
         .collection('accounts')
         .doc(accountId)
         .collection('users')
@@ -1778,7 +1790,7 @@ export const generateStoryCoverImageHttp = functions.runWith({
       const storiesCollection = `stories_gen_${environment}`;
       
       // Get the document from the correct collection
-      const storyRef = admin.firestore().collection(storiesCollection).doc(storyId);
+      const storyRef = getDb().collection(storiesCollection).doc(storyId);
       const docSnapshot = await storyRef.get();
       
       if (!docSnapshot.exists) {
@@ -1855,7 +1867,7 @@ export const generateFullStory = functions.runWith({
       
       // Use direct path with provided environment
       const kidPath = `users_${environment}/${userId}/kids`;
-      const kidRef = admin.firestore().collection(kidPath).doc(kidId);
+      const kidRef = getDb().collection(kidPath).doc(kidId);
       const kidDoc = await kidRef.get();
       
       if (!kidDoc.exists) {
@@ -1884,7 +1896,7 @@ export const generateFullStory = functions.runWith({
       // Initialize story reference for status updates
       const storyId = `story-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const storiesCollectionPath = `stories_gen_${environment}`;
-      const storyRef = admin.firestore().collection(storiesCollectionPath).doc(storyId);
+      const storyRef = getDb().collection(storiesCollectionPath).doc(storyId);
 
       // Helper function to update story status
       const updateStatus = async (status: string, percentage: number) => {

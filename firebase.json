@@ -16,7 +16,8 @@
   ],
   "firestore": {
     "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
+    "indexes": "firestore.indexes.json",
+    "database": "choice-story-db"
   },
   "storage": {
     "rules": "storage.rules"

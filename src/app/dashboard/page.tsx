@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { RefreshCw } from 'lucide-react';
@@ -16,13 +16,18 @@ export default function Dashboard() {
     kids, 
     error, 
     refreshKids,
-    deleteKid
+    deleteKid,
+    kidsLoaded  // This tells us if we've fetched kids data at least once
   } = useUserData();
   
   // Get kids-specific loading state and data
-  const { isLoading: isLoadingKids, kids: kidsFromState } = useKidsState();
+  const { isLoading: isLoadingKids } = useKidsState();
   
   const router = useRouter();
+
+  // Determine if we should show loading state
+  // Show loading if: currently loading OR we haven't loaded kids yet
+  const showLoading = isLoadingKids || !kidsLoaded;
 
   // Track initial load performance
   useEffect(() => {
@@ -127,7 +132,7 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="flex flex-col gap-6">
-        {isLoadingKids ? (
+        {showLoading ? (
           // Loading placeholders
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-min">
             {Array(3).fill(0).map((_, index) => (
