@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function SuccessPage() {
+// Force dynamic rendering to prevent build-time errors with useSearchParams
+export const dynamic = 'force-dynamic';
+
+function SuccessPageContent() {
     const searchParams = useSearchParams();
     const orderId = searchParams.get('orderId');
 
@@ -26,4 +30,17 @@ export default function SuccessPage() {
             </Link>
         </div>
     );
-} 
+}
+
+export default function SuccessPage() {
+    return (
+        <Suspense fallback={
+            <div className="container mx-auto px-4 py-16 text-center">
+                <h1 className="text-4xl font-bold mb-4">Thank You for Your Order!</h1>
+                <p className="text-xl mb-8">Loading...</p>
+            </div>
+        }>
+            <SuccessPageContent />
+        </Suspense>
+    );
+}
