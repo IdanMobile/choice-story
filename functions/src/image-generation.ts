@@ -58,13 +58,13 @@ export async function generateImage(
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData: any = await response.json().catch(() => ({}));
       throw new Error(
         `OpenAI API error: ${response.status} - ${errorData.error?.message || response.statusText}`
       );
     }
 
-    const data = await response.json();
+    const data: any = await response.json();
 
     // Extract base64 from response: find image_generation_call in output array
     if (data.output && Array.isArray(data.output)) {

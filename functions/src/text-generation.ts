@@ -45,13 +45,13 @@ export async function generateText(
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData: any = await response.json().catch(() => ({}));
       throw new Error(
         `OpenAI API error: ${response.status} - ${errorData.error?.message || response.statusText}`
       );
     }
 
-    const data = await response.json();
+    const data: any = await response.json();
 
     // Log the response structure for debugging
     console.log("OpenAI API response structure:", JSON.stringify(data, null, 2));

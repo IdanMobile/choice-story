@@ -13,11 +13,18 @@
     "resolveJsonModule": true,
     "declaration": true,
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "rootDir": "./src",
+    "typeRoots": ["./node_modules/@types"]
   },
   "compileOnSave": true,
   "include": [
-    "src"
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "lib"
   ]
 }
 
