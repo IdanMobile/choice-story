@@ -4,10 +4,15 @@ import { v4 as uuidv4 } from 'uuid';
 import { firebaseAdmin } from '@/app/services/firebase-admin.service';
 import * as Sentry from "@sentry/nextjs";
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization of OpenAI client
+function getOpenAIClient(): OpenAI {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY environment variable is not set');
+  }
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 // Type for DALL-E size options
 type DallE3Size = "1024x1024" | "1792x1024" | "1024x1792";
@@ -274,6 +279,7 @@ export async function POST(request: NextRequest) {
           const enhancedPrompt = `${prompt}. Style: Children's storybook illustration, colorful, friendly, age-appropriate, high quality digital art.`;
           
           // Use standard DALL-E API
+          const openai = getOpenAIClient();
           const response = await openai.images.generate({
             model: modelValue,
             prompt: enhancedPrompt,

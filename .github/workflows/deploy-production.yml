@@ -34,6 +34,8 @@ jobs:
           cd functions
           npm run build
           cd ..
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       
       - name: Deploy Firebase Functions
         run: firebase deploy --only functions
