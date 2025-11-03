@@ -41,7 +41,13 @@ export async function POST(req: NextRequest) {
     }
     
     const { kid } = body;
-    const kidId = await firestoreServerService.saveKid(userId, kid);
+    // Ensure the kid has an accountId field
+    const kidToSave = {
+      ...kid,
+      accountId: userId, // userId in the request is actually the accountId
+    };
+    
+    const kidId = await firestoreServerService.saveKid(kidToSave);
     
     return NextResponse.json({
       success: true,

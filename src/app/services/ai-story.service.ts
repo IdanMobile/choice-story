@@ -224,7 +224,7 @@ export class AIStoryService {
   /**
    * Generate an avatar image using Firebase Functions
    */
-  static async generateAvatarImage(kidDetails: KidDetails, userId: string): Promise<AIStoryImageResponse> {
+  static async generateAvatarImage(kidDetails: KidDetails, userId: string, environment: string = 'development'): Promise<AIStoryImageResponse> {
     return Sentry.startSpan(
       {
         op: "ai.story.generate_avatar",
@@ -233,6 +233,7 @@ export class AIStoryService {
       async (span) => {
         span.setAttribute("kid_id", kidDetails.id);
         span.setAttribute("user_id", userId);
+        span.setAttribute("environment", environment);
 
         try {
           const imageUrl = await AIErrorHandlerService.withRetry(async () => {
@@ -240,7 +241,8 @@ export class AIStoryService {
             const functionRequest = {
               imageUrl: kidDetails.avatarUrl || "", // Use kid's avatar as reference
               accountId: userId, // Using userId as accountId for now
-              userId: userId
+              userId: userId,
+              environment: environment
             };
             
             console.log("Calling Firebase generateKidAvatarImage with:", functionRequest);

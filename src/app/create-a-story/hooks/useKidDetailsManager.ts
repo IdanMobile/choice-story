@@ -28,7 +28,7 @@ export function useKidDetailsManager(userId: string | null | undefined, kidId: s
       }
 
       try {
-        const fetchedKid = await fetchKidById(userId, kidId);
+        const fetchedKid = await fetchKidById(kidId!);
         
         if (fetchedKid) {
           // Set the complete kid details in state
@@ -62,7 +62,7 @@ export function useKidDetailsManager(userId: string | null | undefined, kidId: s
     }
 
     try {
-      const fetchedKid = await fetchKidById(userId, kidId);
+      const fetchedKid = await fetchKidById(kidId!);
       
       if (fetchedKid) {
         // Set the complete kid details in state

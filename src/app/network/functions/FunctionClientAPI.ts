@@ -21,6 +21,7 @@ export interface StoryPagesTextRequest {
   accountId: string;
   userId: string;
   storyId: string;
+  environment: string; // Required for Firestore collection paths
 }
 
 export interface StoryPagesTextResponse {
@@ -83,6 +84,7 @@ export interface KidAvatarImageRequest {
   imageUrl: string;
   accountId: string;
   userId: string;
+  environment: string; // Required for Firestore collection paths
 }
 
 export interface KidAvatarImageResponse {
@@ -98,6 +100,7 @@ export interface StoryPageImageRequest {
   storyId: string;
   pageNum?: number;
   updatePath?: string; // Add updatePath parameter
+  environment: string; // Required for Firestore collection paths
 }
 
 export interface StoryPageImageResponse {
@@ -112,6 +115,7 @@ export interface StoryCoverImageRequest {
   accountId: string;
   userId: string;
   storyId: string;
+  environment: string; // Required for Firestore collection paths
 }
 
 export interface StoryCoverImageResponse {

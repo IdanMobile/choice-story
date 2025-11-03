@@ -12,6 +12,7 @@ import useCreateStoryState from '../state/create-story-state';
 import { StoryAction } from '@/app/state/story-reducer';
 import { AIStoryService } from '@/app/services/ai-story.service';
 import * as Sentry from "@sentry/nextjs";
+import { getFirebaseEnvironment } from '@/config/build-config';
 
 interface UseStoryGenerationWorkflowProps {
   kidId: string | null;
@@ -251,9 +252,13 @@ export function useStoryGenerationWorkflow({
           level: "info"
         });
 
-        // Generate a unique story ID
-        const storyId = `story-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
+        // Get the environment explicitly
+        const environment = getFirebaseEnvironment();
+        
+        // Note: storyId is not used by the function anymore (Firestore auto-generates IDs)
+        // We pass an empty string to satisfy the function signature
+        const storyId = "";
+        
         console.log("Calling Firebase generateStoryPagesText with:", {
           name: kidDetails.name || 'Child',
           problemDescription,
@@ -263,7 +268,8 @@ export function useStoryGenerationWorkflow({
           disadvantages: disadvantages || "",
           accountId: currentUser?.uid || "",
           userId: currentUser?.uid || "",
-          storyId
+          storyId,
+          environment
         });
 
         const response = await functionClientAPI.generateStoryPagesText({
@@ -275,7 +281,8 @@ export function useStoryGenerationWorkflow({
           disadvantages: disadvantages || "",
           accountId: currentUser?.uid || "", // Using userId as accountId
           userId: currentUser?.uid || "",
-          storyId
+          storyId,
+          environment
         });
 
         if (!response.success || !response.text) {

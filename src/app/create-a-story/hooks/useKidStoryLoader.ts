@@ -47,7 +47,7 @@ export function useKidStoryLoader(kidId: string | null | undefined) {
 
       if (kidId) {
         console.log(`[useKidStoryLoader] Fetching kid details for kidId: ${kidId}`);
-        const fetchedKid = await fetchKidById(currentUser.uid, kidId);
+        const fetchedKid = await fetchKidById(kidId);
 
         if (!fetchedKid) {
           toast({

@@ -147,12 +147,12 @@ export async function GET(req: NextRequest) {
     }
     
     // If userId and kidId are provided, get all stories for a kid
-    if (userId && kidId) {
+    if (kidId) {
       const validatedData = GetStoriesByKidSchema.parse({ userId, kidId });
       
 
       
-      const stories = await firestoreServerService.getStoriesByKidId(validatedData.userId, validatedData.kidId);
+      const stories = await firestoreServerService.getStoriesByKidId(validatedData.kidId);
       
       return NextResponse.json({
         success: true,

@@ -3,6 +3,7 @@ import * as admin from "firebase-admin";
 import { generateText } from "./text-generation";
 import { generateImage } from "./image-generation";
 import { OPENAI_AGENTS } from "./open-ai-agents";
+import { FirestoreHelper } from "./lib/firestore-helper";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -12,12 +13,20 @@ const db = admin.firestore();
 // Configure to use the named database 'choice-story-db'
 // Note: This requires the database to exist in your Firebase project
 db.settings({ 
-  // @ts-ignore - databaseId is not in the TypeScript definitions but is supported
   databaseId: 'choice-story-db' 
 });
 
 // Helper function to get the database instance
 const getDb = () => db;
+
+// Initialize Firestore Helper for consistent database access
+// Environment must be passed from the request, not from process.env
+const getFirestoreHelper = (environment: string) => {
+  if (!environment) {
+    throw new Error('Environment parameter is required for FirestoreHelper');
+  }
+  return new FirestoreHelper(db, environment);
+};
 
 /**
  * Example HTTP Cloud Function
@@ -34,8 +43,10 @@ export const helloWorld = functions.https.onRequest((request, response) => {
  */
 export const debugEnvironment = functions.https.onRequest(async (request, response) => {
   try {
-    const environment = process.env.NODE_ENV || 'development';
-    const storiesCollection = `stories_gen_${environment}`;
+    // Get environment from query params, default to production
+    const environment = (request.query.environment as string) || 'production';
+    const dbHelper = getFirestoreHelper(environment);
+    const storiesCollection = dbHelper.getStoriesCollection();
     
     // List all collections
     const collections = await getDb().listCollections();
@@ -253,13 +264,15 @@ interface StoryPagesTextParams {
   accountId: string;
   userId: string;
   storyId: string;
+  environment: string;
 }
 
 /**
- * Helper: Generate Story Pages Text and Save to Firestore
+ * Helper: Generate Story Pages Text (does NOT save to Firestore)
+ * The client will save the complete story after processing
  */
 async function generateAndSaveStoryPagesText(params: StoryPagesTextParams) {
-  const { name, problemDescription, title, age, advantages, disadvantages, accountId, userId, storyId } = params;
+  const { name, problemDescription, title, age, advantages, disadvantages, accountId: _accountId, userId: _userId, storyId, environment: _environment } = params;
 
   // Generate the story text
   const input = `Name: ${name}
@@ -274,26 +287,10 @@ Moral Disadvantages: ${disadvantages}`;
     input: input,
   });
 
-  // Save to Firestore at the correct path
-  const storyRef = getDb()
-    .collection('accounts')
-    .doc(accountId)
-    .collection('users')
-    .doc(userId)
-    .collection('stories')
-    .doc(storyId);
-
-  await storyRef.set({
-    name,
-    problemDescription,
-    title,
-    age,
-    advantages,
-    disadvantages,
-    text,
-    status: 'completed',
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  }, { merge: true });
+  // NOTE: We do NOT save to Firestore here anymore to avoid duplication
+  // The client will save the complete story with all pages and details
+  
+  functions.logger.info(`Generated story text for storyId: ${storyId}, length: ${text.length}`);
 
   return {
     success: true,
@@ -379,12 +376,12 @@ export const generateStoryPagesText = functions.https.onCall(
     }
 
     try {
-      const { name, problemDescription, title, age, advantages, disadvantages, accountId, userId, storyId } = data;
+      const { name, problemDescription, title, age, advantages, disadvantages, accountId, userId, storyId, environment } = data;
 
-      if (!name || !problemDescription || !title || !age || !advantages || !disadvantages || !accountId || !userId || !storyId) {
+      if (!name || !problemDescription || !title || !age || !advantages || !disadvantages || !accountId || !userId || !storyId || !environment) {
         throw new functions.https.HttpsError(
           "invalid-argument",
-          "All fields are required: name, problemDescription, title, age, advantages, disadvantages, accountId, userId, storyId"
+          "All fields are required: name, problemDescription, title, age, advantages, disadvantages, accountId, userId, storyId, environment"
         );
       }
 
@@ -398,6 +395,7 @@ export const generateStoryPagesText = functions.https.onCall(
         accountId,
         userId,
         storyId,
+        environment,
       });
 
       return result;
@@ -455,12 +453,12 @@ export const generateStoryPagesTextHttp = functions.https.onRequest(
       // Verify token
       await admin.auth().verifyIdToken(token);
 
-      const { name, problemDescription, title, age, advantages, disadvantages, accountId, userId, storyId } = request.body;
+      const { name, problemDescription, title, age, advantages, disadvantages, accountId, userId, storyId, environment } = request.body;
 
-      if (!name || !problemDescription || !title || !age || !advantages || !disadvantages || !accountId || !userId || !storyId) {
+      if (!name || !problemDescription || !title || !age || !advantages || !disadvantages || !accountId || !userId || !storyId || !environment) {
         response.status(400).json({
           error: 'Missing required fields',
-          required: ['name', 'problemDescription', 'title', 'age', 'advantages', 'disadvantages', 'accountId', 'userId', 'storyId']
+          required: ['name', 'problemDescription', 'title', 'age', 'advantages', 'disadvantages', 'accountId', 'userId', 'storyId', 'environment']
         });
         return;
       }
@@ -475,6 +473,7 @@ export const generateStoryPagesTextHttp = functions.https.onRequest(
         accountId,
         userId,
         storyId,
+        environment,
       });
 
       response.status(200).json(result);
@@ -776,18 +775,19 @@ export const generateStoryImagePrompt = functions.https.onCall(
         });
 
         try {
-          const storiesCollection = `stories_gen_${environment}`;
+          const dbHelper = getFirestoreHelper(environment);
           
           // Get the document from the correct collection
-          const storyRef = getDb().collection(storiesCollection).doc(storyId);
-          const docSnapshot = await storyRef.get();
+          const docSnapshot = await dbHelper.getStory(storyId);
           
           if (!docSnapshot.exists) {
             throw new functions.https.HttpsError(
               'not-found',
-              `Story document not found in ${storiesCollection}/${storyId}`
+              `Story document not found: ${storyId}`
             );
           } else {
+            const storyRef = dbHelper.getStoryRef(storyId);
+            
             // Parse the updatePath to determine field to update
             // updatePath format: "pages/0/selectedImageUrl" -> we want "pages/0/imagePrompt"
             const pathParts = updatePath.split('/');
@@ -970,18 +970,19 @@ export const generateImagePromptAndImage = functions.runWith({
 
       // Update Firestore with page image URL using updatePath from client
       if (storyId && updatePath) {
-        const storiesCollection = `stories_gen_${environment}`;
+        const dbHelper = getFirestoreHelper(environment);
         
         // Get the document from the correct collection
-        const storyRef = getDb().collection(storiesCollection).doc(storyId);
-        const docSnapshot = await storyRef.get();
+        const docSnapshot = await dbHelper.getStory(storyId);
         
         if (!docSnapshot.exists) {
           throw new functions.https.HttpsError(
             "not-found",
-            `Story document not found in ${storiesCollection}/${storyId}`
+            `Story document not found: ${storyId}`
           );
         }
+        
+        const storyRef = dbHelper.getStoryRef(storyId);
 
         // Correctly handle array update: read-modify-write
         const storyData = docSnapshot.data();
@@ -1057,12 +1058,12 @@ export const generateKidAvatarImage = functions.runWith({
     }
 
     try {
-      const { imageUrl, accountId, userId } = data;
+      const { imageUrl, accountId, userId, environment } = data;
 
-      if (!imageUrl || !accountId || !userId) {
+      if (!imageUrl || !accountId || !userId || !environment) {
         throw new functions.https.HttpsError(
           "invalid-argument",
-          "imageUrl, accountId, and userId are required"
+          "imageUrl, accountId, userId, and environment are required"
         );
       }
 
@@ -1090,15 +1091,11 @@ export const generateKidAvatarImage = functions.runWith({
       );
 
       // Update Firestore with avatar URL
-      await getDb()
-        .collection('accounts')
-        .doc(accountId)
-        .collection('users')
-        .doc(userId)
-        .update({
-          avatarUrl: storageUrl,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
+      // Kids are stored in users_{environment} collection with kidId as document ID
+      const dbHelper = getFirestoreHelper(environment);
+      await dbHelper.updateKid(userId, { // userId is actually the kidId in this context
+        avatarUrl: storageUrl,
+      });
 
       return {
         success: true,
@@ -1193,34 +1190,34 @@ export const generateStoryPageImage = functions.runWith({
         console.log("Using updatePath from client:", updatePath);
 
         // Get the story reference using storyId
-        const storiesCollection = `stories_gen_${environment}`;
+        const dbHelper = getFirestoreHelper(environment);
         
         console.log("DEBUG: Environment and collection info:", {
           environment,
-          storiesCollection,
+          storiesCollection: dbHelper.getStoriesCollection(),
           storyId,
-          fullPath: `${storiesCollection}/${storyId}`
         });
 
         try {
           // Get the document from the correct collection
-          const storyRef = getDb().collection(storiesCollection).doc(storyId);
-          const docSnapshot = await storyRef.get();
+          const docSnapshot = await dbHelper.getStory(storyId);
           
           console.log("DEBUG: Document snapshot:", {
-            collection: storiesCollection,
+            collection: dbHelper.getStoriesCollection(),
             exists: docSnapshot.exists,
             id: docSnapshot.id,
             hasData: docSnapshot.exists ? Object.keys(docSnapshot.data() || {}).length : 0
           });
           
           if (!docSnapshot.exists) {
-            console.error(`Story document does not exist in ${storiesCollection}/${storyId}`);
+            console.error(`Story document does not exist: ${storyId}`);
             throw new functions.https.HttpsError(
               "not-found",
-              `Story document not found in ${storiesCollection}/${storyId}`
+              `Story document not found: ${storyId}`
             );
           }
+          
+          const storyRef = dbHelper.getStoryRef(storyId);
 
           // Correctly handle array update: read-modify-write
           const storyData = docSnapshot.data();
@@ -1361,18 +1358,19 @@ export const generateStoryCoverImage = functions.runWith({
       });
 
       // Update Firestore with cover image URL using environment-based collection
-      const storiesCollection = `stories_gen_${environment}`;
+      const dbHelper = getFirestoreHelper(environment);
       
       // Get the document from the correct collection
-      const storyRef = getDb().collection(storiesCollection).doc(storyId);
-      const docSnapshot = await storyRef.get();
+      const docSnapshot = await dbHelper.getStory(storyId);
       
       if (!docSnapshot.exists) {
         throw new functions.https.HttpsError(
           "not-found",
-          `Story document not found in ${storiesCollection}/${storyId}`
+          `Story document not found: ${storyId}`
         );
       }
+      
+      const storyRef = dbHelper.getStoryRef(storyId);
 
       await storyRef.update({
         coverImageUrl: storageUrl,
@@ -1458,33 +1456,30 @@ export const generateStoryPageImageHttp = functions.runWith({
       }
 
       // Check if story exists before generating image
-      const storiesCollection = `stories_gen_${environment}`;
+      const dbHelper = getFirestoreHelper(environment);
       
       console.log("DEBUG: Environment and collection info (HTTP):", {
         environment,
-        storiesCollection,
+        storiesCollection: dbHelper.getStoriesCollection(),
         storyId,
-        fullPath: `${storiesCollection}/${storyId}`
       });
       
       // Get the document from the correct collection
-      const storyRef = getDb().collection(storiesCollection).doc(storyId);
-      const storyDoc = await storyRef.get();
+      const storyDoc = await dbHelper.getStory(storyId);
       
       console.log("DEBUG: Document snapshot (HTTP):", {
-        collection: storiesCollection,
+        collection: dbHelper.getStoriesCollection(),
         exists: storyDoc.exists,
         id: storyDoc.id,
         hasData: storyDoc.exists ? Object.keys(storyDoc.data() || {}).length : 0
       });
       
       if (!storyDoc.exists) {
-        const errorMessage = `Story document not found in ${storiesCollection}/${storyId}`;
+        const errorMessage = `Story document not found: ${storyId}`;
         console.error(errorMessage);
         
         response.status(404).json({
           error: errorMessage,
-          fullPath: `${storiesCollection}/${storyId}`,
           storyId,
           environment
         });
@@ -1537,8 +1532,8 @@ export const generateStoryPageImageHttp = functions.runWith({
         });
 
         // Get the story reference using storyId (environment already extracted from request.body)
-        const storiesCollectionForUpdate = `stories_gen_${environment}`;
-        const storyRef = getDb().collection(storiesCollectionForUpdate).doc(storyId);
+        const dbHelper = getFirestoreHelper(environment);
+        const storyRef = dbHelper.getStoryRef(storyId);
 
         // Check if document exists before updating
         const docSnapshot = await storyRef.get();
@@ -1621,12 +1616,12 @@ export const generateKidAvatarImageHttp = functions.runWith({
       // Verify token
       await admin.auth().verifyIdToken(token);
 
-      const { imageUrl, accountId, userId } = request.body;
+      const { imageUrl, accountId, userId, environment } = request.body;
 
-      if (!imageUrl || !accountId || !userId) {
+      if (!imageUrl || !accountId || !userId || !environment) {
         response.status(400).json({
           error: 'Missing required fields',
-          required: ['imageUrl', 'accountId', 'userId']
+          required: ['imageUrl', 'accountId', 'userId', 'environment']
         });
         return;
       }
@@ -1655,15 +1650,11 @@ export const generateKidAvatarImageHttp = functions.runWith({
       );
 
       // Update Firestore with avatar URL
-      await getDb()
-        .collection('accounts')
-        .doc(accountId)
-        .collection('users')
-        .doc(userId)
-        .update({
-          avatarUrl: storageUrl,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
+      // Kids are stored in users_{environment} collection with kidId as document ID
+      const dbHelper = getFirestoreHelper(environment);
+      await dbHelper.updateKid(userId, { // userId is actually the kidId in this context
+        avatarUrl: storageUrl,
+      });
 
       response.status(200).json({
         success: true,
@@ -1787,20 +1778,21 @@ export const generateStoryCoverImageHttp = functions.runWith({
       });
 
       // Update Firestore with cover image URL using environment-based collection
-      const storiesCollection = `stories_gen_${environment}`;
+      const dbHelper = getFirestoreHelper(environment);
       
       // Get the document from the correct collection
-      const storyRef = getDb().collection(storiesCollection).doc(storyId);
-      const docSnapshot = await storyRef.get();
+      const docSnapshot = await dbHelper.getStory(storyId);
       
       if (!docSnapshot.exists) {
         response.status(404).json({
-          error: `Story not found in ${storiesCollection}/${storyId}`,
+          error: `Story not found: ${storyId}`,
           storyId,
-          collection: storiesCollection
+          collection: dbHelper.getStoriesCollection()
         });
         return;
       }
+      
+      const storyRef = dbHelper.getStoryRef(storyId);
 
       await storyRef.update({
         coverImageUrl: storageUrl,
@@ -1865,13 +1857,12 @@ export const generateFullStory = functions.runWith({
       // STEP 1: Get kid details from Firestore (5% progress)
       functions.logger.info("Step 1: Fetching kid details from Firestore");
       
-      // Use direct path with provided environment
-      const kidPath = `users_${environment}/${userId}/kids`;
-      const kidRef = getDb().collection(kidPath).doc(kidId);
-      const kidDoc = await kidRef.get();
+      // Kids are stored directly in users_{environment} collection with kidId as document ID
+      const dbHelper = getFirestoreHelper(environment);
+      const kidDoc = await dbHelper.getKid(kidId);
       
       if (!kidDoc.exists) {
-        functions.logger.error("Kid not found", { userId, kidId, path: kidPath });
+        functions.logger.error("Kid not found", { kidId, collection: dbHelper.getUsersCollection() });
         throw new functions.https.HttpsError(
           "not-found",
           `Kid not found with ID: ${kidId} in environment: ${environment}`
@@ -1893,22 +1884,31 @@ export const generateFullStory = functions.runWith({
 
       functions.logger.info("Kid details retrieved", { kidName, kidGender, kidAge });
 
-      // Initialize story reference for status updates
-      const storyId = `story-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const storiesCollectionPath = `stories_gen_${environment}`;
-      const storyRef = getDb().collection(storiesCollectionPath).doc(storyId);
+      // Create a new story document with auto-generated ID
+      const storyRef = dbHelper.getStoriesCollection();
+      const newStoryDoc = await getDb().collection(storyRef).add({
+        userId: userId,
+        kidId: kidId,
+        accountId: userId,
+        status: 'initializing',
+        progress: 5,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      
+      const storyId = newStoryDoc.id;
+      functions.logger.info("Created story with auto-generated ID:", storyId);
+      
+      const storyDocRef = dbHelper.getStoryRef(storyId);
 
       // Helper function to update story status
       const updateStatus = async (status: string, percentage: number) => {
         try {
-          await storyRef.set({
-            id: storyId,
-            userId: userId,
-            kidId: kidId,
+          await storyDocRef.update({
             status: status,
             progress: percentage,
             lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
-          }, { merge: true });
+          });
           functions.logger.info(`Status updated: ${status} (${percentage}%)`);
         } catch (error) {
           functions.logger.warn("Failed to update status:", error);
@@ -1971,6 +1971,7 @@ Age: ${kidAge} years old${advantages ? `\nAdvantages: ${advantages}` : ''}${disa
         accountId: userId,
         userId: userId,
         storyId: storyId,
+        environment,
       });
 
       functions.logger.info("Story pages text generated successfully");
@@ -2011,6 +2012,7 @@ Age: ${kidAge} years old${advantages ? `\nAdvantages: ${advantages}` : ''}${disa
         id: storyId,
         userId: userId,
         kidId: kidId,
+        accountId: userId,
         title: selectedTitle,
         problemDescription: problemDescription,
         advantages: advantages || "",
@@ -2023,11 +2025,10 @@ Age: ${kidAge} years old${advantages ? `\nAdvantages: ${advantages}` : ''}${disa
           imagePrompt: page.imagePrompt || '',
           selectedImageUrl: '', // Will be filled by image generation
         })),
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
         lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
       };
 
-      await storyRef.set(storyData);
+      await storyDocRef.update(storyData);
       functions.logger.info("Story saved to Firestore");
 
       // Update: Story saved (60%)
@@ -2044,7 +2045,8 @@ Age: ${kidAge} years old${advantages ? `\nAdvantages: ${advantages}` : ''}${disa
         
         // Generate image prompts for each page individually
         let promptsGenerated = 0;
-        for (const page of storyPages) {
+        for (let pageIndex = 0; pageIndex < storyPages.length; pageIndex++) {
+          const page = storyPages[pageIndex];
           if (!page.imagePrompt || page.imagePrompt.trim() === '') {
             try {
               const pageText = page.storyText || page.text || '';
@@ -2056,7 +2058,7 @@ Age: ${kidAge} years old${advantages ? `\nAdvantages: ${advantages}` : ''}${disa
                 age: kidAge
               };
               
-              functions.logger.info(`Generating image prompt for page ${page.pageNum}`, { variables });
+              functions.logger.info(`Generating image prompt for page ${pageIndex}`, { variables });
               
               const imagePrompt = await generateText({
                 prompt: { 
@@ -2067,21 +2069,21 @@ Age: ${kidAge} years old${advantages ? `\nAdvantages: ${advantages}` : ''}${disa
               });
               
               page.imagePrompt = imagePrompt;
-              functions.logger.info(`Generated image prompt for page ${page.pageNum}`);
+              functions.logger.info(`Generated image prompt for page ${pageIndex}`);
               
               // Update progress for prompts (60% to 70%)
               promptsGenerated++;
               const promptProgress = 60 + Math.floor((promptsGenerated / pagesNeedingPrompts.length) * 10);
               await updateStatus(`progress_${promptProgress}`, promptProgress);
             } catch (promptError) {
-              functions.logger.error(`Failed to generate image prompt for page ${page.pageNum}:`, promptError);
+              functions.logger.error(`Failed to generate image prompt for page ${pageIndex}:`, promptError);
               // Continue with other pages
             }
           }
         }
         
         // Update Firestore with image prompts
-        await storyRef.update({
+        await storyDocRef.update({
           pages: storyPages.map((page: any, index: number) => ({
             pageNum: index,
             pageType: page.pageType || 'NORMAL',
@@ -2101,7 +2103,7 @@ Age: ${kidAge} years old${advantages ? `\nAdvantages: ${advantages}` : ''}${disa
       
       if (!kidImageUrl) {
         functions.logger.warn("No kid image URL found, skipping image generation");
-        await storyRef.update({
+        await storyDocRef.update({
           status: 'completed',
           lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -2165,11 +2167,11 @@ Age: ${kidAge} years old${advantages ? `\nAdvantages: ${advantages}` : ''}${disa
           storyPages[i].selectedImageUrl = imageStorageUrl;
           
           // Update the entire pages array in Firestore to preserve all page data
-          await storyRef.update({
+          await storyDocRef.update({
             pages: storyPages.map((page: any, index: number) => ({
               pageNum: index,
+              pageType: page.pageType || 'NORMAL',
               storyText: page.storyText || page.text || '',
-              choices: page.choices || [],
               imagePrompt: page.imagePrompt || '',
               selectedImageUrl: page.selectedImageUrl || '',
             })),
@@ -2199,7 +2201,7 @@ Age: ${kidAge} years old${advantages ? `\nAdvantages: ${advantages}` : ''}${disa
 
       // STEP 8: Mark story as complete (100% progress)
       functions.logger.info("Step 8: Marking story as complete");
-      await storyRef.update({
+      await storyDocRef.update({
         status: 'completed',
         progress: 100,
         lastUpdated: admin.firestore.FieldValue.serverTimestamp(),

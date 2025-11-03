@@ -49,9 +49,9 @@ interface KidsState {
   updateLastFetched: () => void;
   
   // Fetch actions
-  fetchKids: (userId: string, user?: FirebaseUser | null) => Promise<KidDetails[]>;
-  fetchKidById: (userId: string, kidId: string, user?: FirebaseUser | null) => Promise<KidDetails | null>;
-  deleteKid: (userId: string, kidId: string, user?: FirebaseUser | null) => Promise<boolean>;
+  fetchKids: (accountId: string, user?: FirebaseUser | null) => Promise<KidDetails[]>;
+  fetchKidById: (kidId: string, user?: FirebaseUser | null) => Promise<KidDetails | null>;
+  deleteKid: (kidId: string, user?: FirebaseUser | null) => Promise<boolean>;
 }
 
 // Cache duration in milliseconds (5 minutes)
@@ -77,8 +77,8 @@ const useKidsState = create<KidsState>((set, get) => ({
   clearKids: () => set({ kids: [], lastFetched: null, error: null, isLoading: false }),
   updateLastFetched: () => set({ lastFetched: Date.now() }),
   
-  // Fetch all kids for a user
-  fetchKids: async (userId, _user) => {
+  // Fetch all kids for an account
+  fetchKids: async (accountId, _user) => {
     try {
       set({ isLoading: true, error: null });
       
@@ -94,7 +94,7 @@ const useKidsState = create<KidsState>((set, get) => ({
       }
       
       // If no valid cache, fetch kids from API using KidApi
-      const response = await KidApi.getKids(userId);
+      const response = await KidApi.getKids(accountId);
       
       if (!response.success) {
         throw new Error(response.error);
@@ -127,7 +127,7 @@ const useKidsState = create<KidsState>((set, get) => ({
   },
   
   // Fetch a single kid by ID
-  fetchKidById: async (userId, kidId, _user) => {
+  fetchKidById: async (kidId, _user) => {
     try {
       set({ isLoading: true, error: null });
       
@@ -146,7 +146,7 @@ const useKidsState = create<KidsState>((set, get) => ({
       }
       
       // If not in cache or cache is stale, fetch from API using KidApi
-      const response = await KidApi.getKidById(userId, kidId);
+      const response = await KidApi.getKidById(kidId);
       
       if (!response.success) {
         throw new Error(response.error);
@@ -193,12 +193,12 @@ const useKidsState = create<KidsState>((set, get) => ({
   },
   
   // Delete a kid
-  deleteKid: async (userId, kidId, _user) => {
+  deleteKid: async (kidId, _user) => {
     try {
       set({ isLoading: true, error: null });
       
       // Delete kid using KidApi
-      const response = await KidApi.deleteKid(userId, kidId);
+      const response = await KidApi.deleteKid(kidId);
       
       if (!response.success) {
         throw new Error(response.error);

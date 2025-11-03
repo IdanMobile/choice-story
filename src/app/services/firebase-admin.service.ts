@@ -34,7 +34,7 @@ export class FirebaseAdminService {
   private initialize() {
     try {
       const apps = getApps();
-      const env = process.env.NODE_ENV || 'development';
+      const env = process.env.FIREBASE_ENV || process.env.NEXT_PUBLIC_FIREBASE_ENV || process.env.NODE_ENV || 'development';
       console.log(`[FIREBASE_ADMIN] Starting initialization in environment: ${env}`);
       
       if (apps.length > 0) {

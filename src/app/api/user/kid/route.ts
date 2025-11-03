@@ -27,10 +27,13 @@ export async function POST(req: NextRequest) {
       kid: KidDetails;
     } = await req.json();
     
-    const kidId = await firestoreServerService.saveKid(
-      validatedInput.userId,
-      validatedInput.kid,
-    );
+    // Ensure the kid has an accountId field
+    const kidToSave = {
+      ...validatedInput.kid,
+      accountId: validatedInput.userId, // userId in the request is actually the accountId
+    };
+    
+    const kidId = await firestoreServerService.saveKid(kidToSave);
     
     return NextResponse.json({
       success: true,
@@ -61,17 +64,16 @@ export async function POST(req: NextRequest) {
  */
 export async function GET(req: NextRequest) {
   try {
-    const userId = req.nextUrl.searchParams.get("userId");
     const kidId = req.nextUrl.searchParams.get("kidId");
     
-    if (!userId || !kidId) {
+    if (!kidId) {
       return NextResponse.json({
         success: false,
-        error: "Missing user ID or kid ID",
+        error: "Missing kid ID",
       }, { status: 400 });
     }
     
-    const kid = await firestoreServerService.getKid(userId, kidId);
+    const kid = await firestoreServerService.getKid(kidId);
     
     if (!kid) {
       return NextResponse.json({
@@ -100,17 +102,16 @@ export async function GET(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
-    const userId = req.nextUrl.searchParams.get("userId");
     const kidId = req.nextUrl.searchParams.get("kidId");
     
-    if (!userId || !kidId) {
+    if (!kidId) {
       return NextResponse.json({
         success: false,
-        error: "Missing user ID or kid ID",
+        error: "Missing kid ID",
       }, { status: 400 });
     }
     
-    await firestoreServerService.deleteKid(userId, kidId);
+    await firestoreServerService.deleteKid(kidId);
     
     return NextResponse.json({
       success: true,

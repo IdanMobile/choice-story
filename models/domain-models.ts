@@ -27,6 +27,7 @@ export interface Name {
 // Kid model definition
 export interface KidDetails {
   id: string;
+  accountId: string; // Reference to the account that owns this kid
   names: Name[];
   age: number;
   gender: Gender;
@@ -53,7 +54,8 @@ export interface EndOfStorySelection {
 export interface Story {
   id: string;
   kidId: string;
-  userId: string;
+  accountId: string; // Reference to the account that owns this story (formerly userId)
+  userId: string; // DEPRECATED: keeping for backward compatibility, use accountId instead
   title: string;
   problemDescription: string;
   advantages: string;
@@ -240,7 +242,8 @@ export const Story = {
     return {
       id: '',
       kidId: '',
-      userId: '',
+      accountId: '',
+      userId: '', // DEPRECATED: keeping for backward compatibility
       title: '',
       problemDescription: '',
       advantages: '',
@@ -318,7 +321,8 @@ export const Story = {
     return {
       id: data.id || '',
       kidId: data.kidId || '',
-      userId: data.userId || '',
+      accountId: data.accountId || data.userId || '', // Fallback to userId for backward compatibility
+      userId: data.userId || data.accountId || '', // DEPRECATED: keeping for backward compatibility
       title: data.title || '',
       problemDescription: data.problemDescription || '',
       advantages: data.advantages || '',

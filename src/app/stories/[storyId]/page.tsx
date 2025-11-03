@@ -52,7 +52,7 @@ export default function StoryPageComponent() {
       
       if (storyData.kidId || kidId) {
         const kidIdToUse = storyData.kidId || String(kidId);
-        const kidData = await fetchKidById(currentUser.uid, kidIdToUse);
+        const kidData = await fetchKidById(kidIdToUse);
         if (kidData) setKid(kidData);
       }
       

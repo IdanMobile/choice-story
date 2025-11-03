@@ -70,25 +70,24 @@ export class KidApi {
   private static readonly KID_ENDPOINT = '/api/user/kid';
   
   /**
-   * Get a list of kids for a user
+   * Get a list of kids for an account
    * 
-   * @param userId The user ID to get kids for
+   * @param accountId The account ID to get kids for
    * @returns API response with kids data
    */
-  static async getKids(userId: string): Promise<ApiResponse<GetKidsResponse>> {
-    return apiClient.get<GetKidsResponse>(`${this.KIDS_ENDPOINT}?userId=${userId}`);
+  static async getKids(accountId: string): Promise<ApiResponse<GetKidsResponse>> {
+    return apiClient.get<GetKidsResponse>(`${this.KIDS_ENDPOINT}?userId=${accountId}`);
   }
   
   /**
    * Get a kid by ID
    * 
-   * @param userId The user ID the kid belongs to
    * @param kidId The kid ID to get
    * @returns API response with kid data
    */
-  static async getKidById(userId: string, kidId: string): Promise<ApiResponse<GetKidResponse>> {
-    console.log(`[KidApi] Fetching kid - userId: ${userId}, kidId: ${kidId}`);
-    const endpoint = `${this.KIDS_ENDPOINT}/${kidId}?userId=${userId}`;
+  static async getKidById(kidId: string): Promise<ApiResponse<GetKidResponse>> {
+    console.log(`[KidApi] Fetching kid - kidId: ${kidId}`);
+    const endpoint = `${this.KIDS_ENDPOINT}/${kidId}`;
     console.log(`[KidApi] Request endpoint: ${endpoint}`);
     
     try {
@@ -126,11 +125,10 @@ export class KidApi {
   /**
    * Delete a kid
    * 
-   * @param userId The user ID the kid belongs to
    * @param kidId The kid ID to delete
    * @returns API response with deletion result
    */
-  static async deleteKid(userId: string, kidId: string): Promise<ApiResponse<DeleteKidResponse>> {
-    return apiClient.delete<DeleteKidResponse>(`${this.KIDS_ENDPOINT}/${kidId}?userId=${userId}`);
+  static async deleteKid(kidId: string): Promise<ApiResponse<DeleteKidResponse>> {
+    return apiClient.delete<DeleteKidResponse>(`${this.KIDS_ENDPOINT}/${kidId}`);
   }
 } 

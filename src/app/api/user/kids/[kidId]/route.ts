@@ -22,17 +22,9 @@ export async function GET(
     
     const _authenticatedUid = decodedToken?.uid;
     
-    const userId = request.nextUrl.searchParams.get("userId");
-    console.log(`[/api/user/kids/${kidId}] Requested userId: ${userId}, kidId: ${kidId}`);
+    console.log(`[/api/user/kids/${kidId}] Requested kidId: ${kidId}`);
     
-    if (!userId) {
-      return NextResponse.json({
-        success: false,
-        error: "Missing user ID",
-      }, { status: 400 });
-    }
-    
-    const kid = await firestoreServerService.getKid(userId, kidId);
+    const kid = await firestoreServerService.getKid(kidId);
     
     if (!kid) {
       return NextResponse.json({
@@ -77,17 +69,9 @@ export async function DELETE(
     
     const _authenticatedUid = decodedToken?.uid;
     
-    const userId = request.nextUrl.searchParams.get("userId");
-    console.log(`[/api/user/kids/${kidId}] DELETE - Requested userId: ${userId}, kidId: ${kidId}`);
+    console.log(`[/api/user/kids/${kidId}] DELETE - Requested kidId: ${kidId}`);
     
-    if (!userId) {
-      return NextResponse.json({
-        success: false,
-        error: "Missing user ID",
-      }, { status: 400 });
-    }
-    
-    await firestoreServerService.deleteKid(userId, kidId);
+    await firestoreServerService.deleteKid(kidId);
     
     return NextResponse.json({
       success: true,

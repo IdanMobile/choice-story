@@ -41,8 +41,8 @@ export function useUserData() {
       (!kidsLastFetched || Date.now() - kidsLastFetched > 5 * 60 * 1000); // Refetch every 5 minutes
     
     if (shouldFetchKids) {
-      // Only need to pass the user ID, not the Firebase user object
-      fetchKids(userData.uid);
+      // Pass the account ID to fetch kids
+      fetchKids(userData.uid); // userData.uid is the accountId
     }
   }, [firebaseUser, userData, isFetchingUserData, kidsLastFetched, fetchKids]);
   
@@ -65,7 +65,7 @@ export function useUserData() {
     updateUser: updateUserInFirestore,
     refreshUserData: firebaseUser ? () => fetchUserData(firebaseUser) : undefined,
     refreshKids: userData ? () => fetchKids(userData.uid) : undefined,
-    deleteKid: userData ? (kidId: string) => deleteKid(userData.uid, kidId) : undefined,
+    deleteKid: (kidId: string) => deleteKid(kidId),
   };
 }
 

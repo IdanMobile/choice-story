@@ -1,6 +1,7 @@
 import React from 'react';
 import { ImageGenerationComponent } from './ImageGenerationComponent';
 import { PageType, StoryPage, KidDetails } from '@/models';
+import { getFirebaseEnvironment } from '@/config/build-config';
 
 export interface StoryPageImageGeneratorProps {
   userId: string;
@@ -79,8 +80,8 @@ export const StoryPageImageGenerator: React.FC<StoryPageImageGeneratorProps> = (
 
   // Generate the updatePath using the same logic as the API
   const getUpdatePath = (page: StoryPage): string => {
-    // Use the same collection path logic as firestore.server.ts
-    const environment = process.env.NODE_ENV || 'development';
+    // Get environment explicitly
+    const environment = getFirebaseEnvironment();
     const storiesCollection = `stories_gen_${environment}`;
     const fieldPath = `pages/${page.pageNum}/selectedImageUrl`;
     const fullUpdatePath = `${storiesCollection}/${storyId}/${fieldPath}`;

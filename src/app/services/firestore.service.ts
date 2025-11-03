@@ -2,7 +2,7 @@ import { getFirestore, collection, doc, getDoc, getDocs, query, where, Firestore
 import { app } from '@choiceStoryWeb/firebase';
 import { Account, KidDetails } from '@choiceStoryWeb/models';
 import type { UserData } from '@/app/network/UserApi';
-import { API_ENV } from '@/config/build-config';
+import { getFirebaseEnvironment } from '@/config/build-config';
 
 // Helper function to convert Date to ISO string
 const _convertDatesToISOString = (obj: Record<string, unknown>): Record<string, unknown> => {
@@ -23,20 +23,22 @@ const _convertDatesToISOString = (obj: Record<string, unknown>): Record<string, 
 
 class FirestoreService {
   private db: Firestore | null = null;
-  private environment: string = API_ENV;
+  private environment: string;
 
   constructor() {
+    // Get environment explicitly - must be set via NEXT_PUBLIC_FIREBASE_ENV
+    this.environment = getFirebaseEnvironment();
+    
     try {
       // Check if we're on the client side
       const isClient = typeof window !== 'undefined';
       
-      // Only initialize if on client side or in development
-      if (isClient || process.env.NODE_ENV === 'development') {
+      // Only initialize if on client side
+      if (isClient) {
         this.db = getFirestore(app);
-        // Get environment from build-time environment variable
         console.log('[FIRESTORE_CLIENT] Initialized with environment:', this.environment);
       } else {
-        console.warn('[FIRESTORE_CLIENT] Constructor called server-side outside development. No initialization performed.');
+        console.warn('[FIRESTORE_CLIENT] Constructor called server-side. This service should only be used on the client side.');
       }
     } catch (error) {
       console.error('[FIRESTORE_CLIENT] Error initializing Firestore:', error);
@@ -46,8 +48,8 @@ class FirestoreService {
   // Helper to verify initialization
   private ensureInitialized() {
     if (!this.db) {
-      if (typeof window === 'undefined' && process.env.NODE_ENV !== "development") {
-        throw new Error('Firestore not initialized. This service should only be used on the client side or in development API routes.');
+      if (typeof window === 'undefined') {
+        throw new Error('Firestore not initialized. This service should only be used on the client side.');
       } else {
         // Try to initialize now (might happen if constructor error occurred)
         this.db = getFirestore(app);
@@ -75,74 +77,80 @@ class FirestoreService {
   }
 
 
-  async getUsersByAccountId(accountId: string): Promise<Account[]> {
+  /**
+   * Get kids by account ID
+   * Kids are stored in users_{environment} collection
+   */
+  async getKidsByAccountId(accountId: string): Promise<KidDetails[]> {
     if (!this.db) {
       throw new Error('Firestore not initialized. This service can only be used on the client side.');
     }
 
     try {
-      const usersRef = collection(this.db, this.getUsersCollection());
-      const q = query(usersRef, where('accountId', '==', accountId));
+      const kidsRef = collection(this.db, this.getUsersCollection());
+      const q = query(kidsRef, where('accountId', '==', accountId));
       const querySnapshot = await getDocs(q);
 
       return querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
           ...data,
-          createAt: data.createAt.toDate(),
-          lastUpdated: data.lastUpdated.toDate(),
-        } as Account;
+          id: doc.id,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+          lastUpdated: data.lastUpdated?.toDate ? data.lastUpdated.toDate() : new Date(),
+        } as KidDetails;
       });
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching kids:', error);
       throw error;
     }
   }
 
   /**
-   * Get user data by UID
-   * @param uid User's Firebase Auth UID
+   * Get kid data by UID
+   * Note: users_{environment} collection contains kid documents
+   * @param uid Kid's ID
    */
-  async getUserByUid(uid: string): Promise<UserData | null> {
+  async getKidByUid(uid: string): Promise<KidDetails | null> {
     try {
       // Make sure the database is initialized
       this.ensureInitialized();
       
-      const userRef = doc(this.db!, this.getUsersCollection(), uid);
-      const userSnap = await getDoc(userRef);
+      const kidRef = doc(this.db!, this.getUsersCollection(), uid);
+      const kidSnap = await getDoc(kidRef);
 
-      if (!userSnap.exists()) {
-        console.log('No user found for uid:', uid);
+      if (!kidSnap.exists()) {
+        console.log('No kid found for uid:', uid);
         return null;
       }
 
-      const data = userSnap.data();
-      const userData = {
+      const data = kidSnap.data();
+      const kidData = {
         ...data,
-        uid,
-        createAt: data.createAt?.toDate ? data.createAt.toDate().toISOString() : new Date().toISOString(),
-        lastUpdated: data.lastUpdated?.toDate ? data.lastUpdated.toDate().toISOString() : new Date().toISOString(),
-      } as UserData;
-      return userData;
+        id: uid,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+        lastUpdated: data.lastUpdated?.toDate ? data.lastUpdated.toDate() : new Date(),
+      } as KidDetails;
+      return kidData;
     } catch (error) {
-      console.error('Error fetching user by uid:', error);
+      console.error('Error fetching kid by uid:', error);
       throw error;
     }
   }
 
 
-  private async updateExistingKid(userId: string, kidId: string, kidDetails: Partial<KidDetails>, avatarUrl?: string): Promise<string> {
+  private async updateExistingKid(kidId: string, kidDetails: Partial<KidDetails>, avatarUrl?: string): Promise<string> {
     if (!this.db) {
       throw new Error('Firestore not initialized. This service can only be used on the client side.');
     }
 
-    const kidRef = doc(this.db, `${this.getUsersCollection()}/${userId}/kids/${kidId}`);
+    const kidRef = doc(this.db, this.getUsersCollection(), kidId);
     
     // Check if the document exists first
     const docSnap = await getDoc(kidRef);
     if (!docSnap.exists()) {
       console.log(`Kid with ID ${kidId} doesn't exist. Creating a new document instead.`);
-      return this.addNewKid(userId, kidDetails as KidDetails, avatarUrl);
+      return this.addNewKid(kidDetails as KidDetails, avatarUrl);
     }
     
     const updateData = {
@@ -161,7 +169,7 @@ class FirestoreService {
     return kidId;
   }
 
-  private async addNewKid(userId: string, kidDetails: KidDetails, avatarUrl?: string): Promise<string> {
+  private async addNewKid(kidDetails: KidDetails, avatarUrl?: string): Promise<string> {
     if (!this.db) {
       throw new Error('Firestore not initialized. This service can only be used on the client side.');
     }
@@ -171,7 +179,7 @@ class FirestoreService {
       throw new Error('Missing required kid fields (name, age, gender)');
     }
 
-    const kidsCollection = collection(this.db, `${this.getUsersCollection()}/${userId}/kids`);
+    const kidsCollection = collection(this.db, this.getUsersCollection());
     
     const kidData = {
       ...kidDetails,
@@ -184,37 +192,45 @@ class FirestoreService {
     console.log('Creating new kid in Firestore:', kidData);
 
     const docRef = await addDoc(kidsCollection, kidData);
+    await updateDoc(docRef, { id: docRef.id });
     return docRef.id;
   }
 
-  async saveKid(userId: string, kidDetails: KidDetails, avatarUrl?: string): Promise<string> {
+  async saveKid(kidDetails: KidDetails, avatarUrl?: string): Promise<string> {
     try {
       // If we have an ID, update the existing document
       if (kidDetails.id) {
-        return this.updateExistingKid(userId, kidDetails.id, kidDetails, avatarUrl);
+        return this.updateExistingKid(kidDetails.id, kidDetails, avatarUrl);
       }
 
       // If no ID, create a new document
-      return this.addNewKid(userId, kidDetails, avatarUrl);
+      return this.addNewKid(kidDetails, avatarUrl);
     } catch (error) {
       console.error('Error saving kid:', error);
       throw error;
     }
   }
 
-  async getKids(userId: string): Promise<(KidDetails & { id: string, avatarUrl: string, storiesCount: number })[]> {
+  /**
+   * Get kids by account ID
+   * Kids are stored in users_{environment} collection
+   */
+  async getKids(accountId: string): Promise<(KidDetails & { id: string, avatarUrl: string, storiesCount: number })[]> {
     if (!this.db) {
       throw new Error('Firestore not initialized. This service can only be used on the client side.');
     }
 
     try {
-      const kidsRef = collection(this.db, `users/${userId}/kids`);
-      const kidsSnapshot = await getDocs(kidsRef);
+      const kidsRef = collection(this.db, this.getUsersCollection());
+      const q = query(kidsRef, where('accountId', '==', accountId));
+      const kidsSnapshot = await getDocs(q);
 
       const kids = await Promise.all(kidsSnapshot.docs.map(async doc => {
         const data = doc.data();
-        const storiesRef = collection(this.db!, `users/${userId}/kids/${doc.id}/stories`);
-        const storiesSnapshot = await getDocs(storiesRef);
+        // Get stories count from stories_gen_{environment} collection
+        const storiesRef = collection(this.db!, this.getStoriesCollection());
+        const storiesQuery = query(storiesRef, where('kidId', '==', doc.id));
+        const storiesSnapshot = await getDocs(storiesQuery);
 
         return {
           ...data,
@@ -235,13 +251,17 @@ class FirestoreService {
     }
   }
 
-  async getKid(userId: string, kidId: string): Promise<(KidDetails & { id: string, avatarUrl: string, storiesCount: number }) | null> {
+  /**
+   * Get a single kid by ID
+   * Kids are stored in users_{environment} collection
+   */
+  async getKid(kidId: string): Promise<(KidDetails & { id: string, avatarUrl: string, storiesCount: number }) | null> {
     if (!this.db) {
       throw new Error('Firestore not initialized. This service can only be used on the client side.');
     }
 
     try {
-      const kidRef = doc(this.db, `users/${userId}/kids/${kidId}`);
+      const kidRef = doc(this.db, this.getUsersCollection(), kidId);
       const kidSnapshot = await getDoc(kidRef);
 
       if (!kidSnapshot.exists()) {
@@ -249,8 +269,10 @@ class FirestoreService {
       }
 
       const data = kidSnapshot.data();
-      const storiesRef = collection(this.db, `users/${userId}/kids/${kidId}/stories`);
-      const storiesSnapshot = await getDocs(storiesRef);
+      // Get stories count from stories_gen_{environment} collection
+      const storiesRef = collection(this.db, this.getStoriesCollection());
+      const storiesQuery = query(storiesRef, where('kidId', '==', kidId));
+      const storiesSnapshot = await getDocs(storiesQuery);
 
       return {
         ...data,
@@ -268,13 +290,17 @@ class FirestoreService {
     }
   }
 
-  async deleteKid(userId: string, kidId: string): Promise<void> {
+  /**
+   * Delete a kid by ID
+   * Kids are stored in users_{environment} collection
+   */
+  async deleteKid(kidId: string): Promise<void> {
     if (!this.db) {
       throw new Error('Firestore not initialized. This service can only be used on the client side.');
     }
 
     try {
-      const kidRef = doc(this.db, `${this.getUsersCollection()}/${userId}/kids/${kidId}`);
+      const kidRef = doc(this.db, this.getUsersCollection(), kidId);
       await deleteDoc(kidRef);
     } catch (error) {
       console.error('Error deleting kid:', error);

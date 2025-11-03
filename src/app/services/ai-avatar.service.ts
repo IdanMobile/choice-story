@@ -15,6 +15,7 @@ export interface AIAvatarGenerationRequest {
   kidDetails: KidDetails;
   userId: string;
   sourceImageUrl?: string; // Optional source image for reference
+  environment?: string; // Firebase environment (development, production, etc.)
 }
 
 export interface AIAvatarGenerationResponse {
@@ -58,7 +59,8 @@ export class AIAvatarService {
           // Generate avatar using the AI bot system
           const aiResponse = await AIStoryService.generateAvatarImage(
             request.kidDetails, 
-            request.userId
+            request.userId,
+            request.environment || 'development'
           );
 
           if (!aiResponse.success || !aiResponse.imageUrl) {

@@ -9,7 +9,7 @@ interface LogMessage {
 }
 
 class Logger {
-  private isDevelopment = process.env.NODE_ENV === 'development';
+  private isDevelopment = (process.env.NODE_ENV || 'development') === 'development';
 
   private formatMessage(level: LogLevel, { message, error, context }: LogMessage): string {
     const timestamp = new Date().toISOString();

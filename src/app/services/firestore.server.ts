@@ -3,6 +3,7 @@ import { UserData } from '../network/UserApi';
 import { firebaseAdmin } from './firebase-admin.service';
 import { storageService } from './storage.service';
 import { Firestore } from '@google-cloud/firestore';
+import { getFirebaseEnvironment } from '@/config/build-config';
 
 interface FirestoreData {
   [key: string]: unknown;
@@ -16,12 +17,13 @@ interface FirestoreData {
  */
 class FirestoreServerService {
   private db!: Firestore;
-  private environment: string = 'dev';
+  private environment: string;
   private isInitialized: boolean = false;
   private initializationError: string | null = null;
 
   constructor() {
-    this.environment = process.env.NODE_ENV || 'development';
+    // Get environment explicitly - must be set via FIREBASE_ENV or NEXT_PUBLIC_FIREBASE_ENV
+    this.environment = getFirebaseEnvironment();
     
     try {
       if (!firebaseAdmin.isReady()) {
@@ -69,178 +71,211 @@ class FirestoreServerService {
   }
 
   /**
-   * Get user data by UID
+   * Get kid data by UID
+   * Note: users_{environment} collection contains kid documents, not account/user data
    */
-  async getUserByUid(uid: string) {
+  async getKidByUid(uid: string) {
     try {
       this.ensureInitialized();
       
-      const userRef = this.db.collection(this.getUsersCollection()).doc(uid);
-      const userDoc = await userRef.get();
+      const kidRef = this.db.collection(this.getUsersCollection()).doc(uid);
+      const kidDoc = await kidRef.get();
 
-      if (!userDoc.exists) {
-        console.log('[FIRESTORE_SERVER] No user found for uid:', uid);
+      if (!kidDoc.exists) {
+        console.log('[FIRESTORE_SERVER] No kid found for uid:', uid);
         return null;
       }
 
-      const data = userDoc.data();
-      const userData = {
+      const data = kidDoc.data();
+      const kidData = {
         ...data,
-        uid,
-        createAt: data?.createAt?.toDate() || new Date(),
+        id: uid,
+        createdAt: data?.createdAt?.toDate() || new Date(),
         lastUpdated: data?.lastUpdated?.toDate() || new Date(),
       };
       
-      console.log('[FIRESTORE_SERVER] Successfully retrieved user data for:', uid);
-      return userData;
+      console.log('[FIRESTORE_SERVER] Successfully retrieved kid data for:', uid);
+      return kidData;
     } catch (error) {
-      console.error('[FIRESTORE_SERVER] Error fetching user by uid:', error);
+      console.error('[FIRESTORE_SERVER] Error fetching kid by uid:', error);
       throw error;
     }
   }
 
   /**
-   * Create a new user in Firestore
-   * @param userData User data including uid
-   * @returns The created user data
+   * Create a new kid in Firestore
+   * Note: users_{environment} collection contains kid documents, not account/user data
+   * @param kidData Kid data including id
+   * @returns The created kid data
    */
-  async createUserData(userData: UserData): Promise<UserData> {
+  async createKidData(kidData: KidDetails): Promise<KidDetails> {
     try {
       this.ensureInitialized();
       
-      const userRef = this.db.collection(this.getUsersCollection()).doc(userData.uid);
+      const kidRef = this.db.collection(this.getUsersCollection()).doc(kidData.id);
       
       const now = new Date();
-      const userDataWithTimestamps: FirestoreData = {
-        ...userData,
-        createAt: now,
+      const kidDataWithTimestamps: FirestoreData = {
+        ...kidData,
+        createdAt: now,
         lastUpdated: now,
       };
       
-      await userRef.set(userDataWithTimestamps);
+      await kidRef.set(kidDataWithTimestamps);
       
-      console.log('[FIRESTORE_SERVER] Successfully created user data for:', userData.uid);
+      console.log('[FIRESTORE_SERVER] Successfully created kid data for:', kidData.id);
       return {  
-        ...userData,
-        createAt: now.toISOString(),
-        lastUpdated: now.toISOString(),
-      } as UserData;
+        ...kidData,
+        createdAt: now,
+        lastUpdated: now,
+      } as KidDetails;
     } catch (error) {
-      console.error('[FIRESTORE_SERVER] Error creating user data:', error);
+      console.error('[FIRESTORE_SERVER] Error creating kid data:', error);
       throw error;
     }
   }
 
   /**
-   * Update an existing user data in Firestore
-   * @param userData User data with fields to update
-   * @returns The updated user data
+   * Update an existing kid data in Firestore
+   * Note: users_{environment} collection contains kid documents, not account/user data
+   * @param kidData Kid data with fields to update
+   * @returns The updated kid data
    */
-  async updateUserData(userData: UserData): Promise<UserData> {
+  async updateKidData(kidData: KidDetails): Promise<KidDetails> {
     try {
       this.ensureInitialized();
       
-      const userRef = this.db.collection(this.getUsersCollection()).doc(userData.uid);
+      const kidRef = this.db.collection(this.getUsersCollection()).doc(kidData.id);
       
-      // Check if user exists
-      const userDoc = await userRef.get();
-      if (!userDoc.exists) {
-        throw new Error(`User with ID ${userData.uid} doesn't exist.`);
+      // Check if kid exists
+      const kidDoc = await kidRef.get();
+      if (!kidDoc.exists) {
+        throw new Error(`Kid with ID ${kidData.id} doesn't exist.`);
       }
       
-      const existingData = userDoc.data() || {};
+      const existingData = kidDoc.data() || {};
       const now = new Date();
       
       const updateData = {
-        ...userData,
+        ...kidData,
         lastUpdated: now,
       };
       
-      // Remove uid from update data (it's in the document path)
-      const { uid: _, ...dataWithoutUid } = updateData;
+      // Remove id from update data (it's in the document path)
+      const { id: _, ...dataWithoutId } = updateData;
       
-      await userRef.update(dataWithoutUid);
+      await kidRef.update(dataWithoutId);
       
       return {
         ...existingData,
-        ...userData,
-        uid: userData.uid,
-        createAt: existingData.createAt?.toDate ? existingData.createAt.toDate() : new Date(),
-        lastUpdated: now.toISOString(),
-      } as UserData;
+        ...kidData,
+        id: kidData.id,
+        createdAt: existingData.createdAt?.toDate ? existingData.createdAt.toDate() : new Date(),
+        lastUpdated: now,
+      } as KidDetails;
     } catch (error) {
-      console.error('Error updating user data:', error);
+      console.error('Error updating kid data:', error);
       throw error;
     }
   }
 
   /**
-   * Get all kids for a user
+   * Get all kids for a user (account)
+   * Kids are stored in users_{environment} collection, not as subcollections
    */
-  async getKids(userId: string) : Promise<KidDetails[]> {
+  async getKids(accountId: string) : Promise<KidDetails[]> {
     try {
       this.ensureInitialized();
       
-      const kidsRef = this.db.collection(`${this.getUsersCollection()}/${userId}/kids`);
+      const usersCollection = this.getUsersCollection();
+      console.log(`[FIRESTORE_SERVER] getKids - Looking for kids with accountId: ${accountId} in collection: ${usersCollection}, environment: ${this.environment}`);
+      
+      // Query kids by accountId field in users_{environment} collection
+      const kidsRef = this.db.collection(usersCollection)
+        .where('accountId', '==', accountId);
       const snapshot = await kidsRef.get();
+
+      console.log(`[FIRESTORE_SERVER] Found ${snapshot.docs.length} kids for accountId: ${accountId}`);
 
       const kids = snapshot.docs.map(doc => {
         const data = doc.data();
-        return data as KidDetails;
+        return {
+          ...data,
+          id: doc.id
+        } as KidDetails;
       });
 
       return kids;
     } catch (error) {
-      console.error('Error fetching kids:', error);
+      console.error('[FIRESTORE_SERVER] Error fetching kids:', error);
       throw error;
     }
   }
 
   /**
-   * Get a specific kid for a user
+   * Get a specific kid by ID
+   * Kids are documents in users_{environment} collection
    */
-  async getKid(userId: string, kidId: string) {
+  async getKid(kidId: string) {
     try {
       this.ensureInitialized();
       
-      const kidRef = this.db.collection(`${this.getUsersCollection()}/${userId}/kids`).doc(kidId);
+      const usersCollection = this.getUsersCollection();
+      console.log(`[FIRESTORE_SERVER] getKid - Looking for kid ${kidId} in collection: ${usersCollection}, environment: ${this.environment}`);
+      
+      const kidRef = this.db.collection(usersCollection).doc(kidId);
       const doc = await kidRef.get();
 
       if (!doc.exists) {
-        console.log('No kid found with id:', kidId);
+        console.log(`[FIRESTORE_SERVER] No kid found with id: ${kidId} in ${usersCollection}`);
         return null;
       }
 
       const data = doc.data();
+      console.log(`[FIRESTORE_SERVER] Found kid: ${kidId}, has accountId: ${!!data?.accountId}`);
+      
       // Return exactly what's in the database without defaults
-      return data as KidDetails;
+      return {
+        ...data,
+        id: doc.id
+      } as KidDetails;
     } catch (error) {
-      console.error('Error fetching kid:', error);
+      console.error('[FIRESTORE_SERVER] Error fetching kid:', error);
       throw error;
     }
   }
 
   /**
    * Save a kid (create or update)
+   * Kids are stored as documents in users_{environment} collection
    */
-  async saveKid(userId: string, kidDetails: KidDetails) : Promise<KidDetails> {
+  async saveKid(kidDetails: KidDetails) : Promise<KidDetails> {
     try {
       this.ensureInitialized();
       
       if (!kidDetails.id || kidDetails.id.trim() === '') {
         // Create new kid - ensure all required fields are present
-        
-        // Create with all required fields
-        const kidsCollection = this.db.collection(`${this.getUsersCollection()}/${userId}/kids`);
-        const newKidRef = await kidsCollection.add(kidDetails as unknown as Record<string, unknown>);
-        newKidRef.update({
+        const kidsCollection = this.db.collection(this.getUsersCollection());
+        const kidData = {
+          ...kidDetails,
+          createdAt: new Date(),
+          lastUpdated: new Date()
+        };
+        const newKidRef = await kidsCollection.add(kidData as unknown as Record<string, unknown>);
+        await newKidRef.update({
           id: newKidRef.id,
         });
-        return kidDetails;
+        return {
+          ...kidDetails,
+          id: newKidRef.id
+        };
       } else {
-        const kidRef = this.db.collection(`${this.getUsersCollection()}/${userId}/kids`).doc(kidDetails.id);
-        
-        await kidRef.update(kidDetails as unknown as Record<string, unknown>);
+        const kidRef = this.db.collection(this.getUsersCollection()).doc(kidDetails.id);
+        const updateData = {
+          ...kidDetails,
+          lastUpdated: new Date()
+        };
+        await kidRef.update(updateData as unknown as Record<string, unknown>);
         return kidDetails;
       }
     } catch (error) {
@@ -251,12 +286,13 @@ class FirestoreServerService {
 
   /**
    * Delete a kid
+   * Kids are documents in users_{environment} collection
    */
-  async deleteKid(userId: string, kidId: string) {
+  async deleteKid(kidId: string) {
     try {
       this.ensureInitialized();
       
-      const kidRef = this.db.collection(`${this.getUsersCollection()}/${userId}/kids`).doc(kidId);
+      const kidRef = this.db.collection(this.getUsersCollection()).doc(kidId);
       await kidRef.delete();
     } catch (error) {
       console.error('Error deleting kid:', error);
@@ -289,12 +325,11 @@ class FirestoreServerService {
   /**
    * Get stories by kid ID
    */
-  async getStoriesByKidId(userId: string, kidId: string) {
+  async getStoriesByKidId(kidId: string) {
     try {
       this.ensureInitialized();
       
       const storiesRef = this.db.collection(this.getStoriesCollection())
-        .where('userId', '==', userId)
         .where('kidId', '==', kidId);
         
       const snapshot = await storiesRef.get();
@@ -319,12 +354,12 @@ class FirestoreServerService {
   /**
    * Delete a story and clean up related resources
    */
-  async deleteStory(userId: string, kidId: string, storyId: string): Promise<void> {
+  async deleteStory(accountId: string, kidId: string, storyId: string): Promise<void> {
     try {
       this.ensureInitialized();
       
       // Delete story images from storage
-      await storageService.deleteStoryFolder(userId, kidId, storyId);
+      await storageService.deleteStoryFolder(accountId, kidId, storyId);
       
       // Delete story document from Firestore
       const storyRef = this.db.collection(this.getStoriesCollection()).doc(storyId);
@@ -424,12 +459,16 @@ class FirestoreServerService {
     }
   }
 
-  async getStoriesByUserId(userId: string): Promise<Story[]> {
+  /**
+   * Get stories by account ID
+   * Note: Stories are stored in stories_gen_{environment} collection
+   */
+  async getStoriesByAccountId(accountId: string): Promise<Story[]> {
     try {
       this.ensureInitialized();
       
       const storiesRef = this.db.collection(this.getStoriesCollection())
-        .where('userId', '==', userId);
+        .where('accountId', '==', accountId);
         
       const snapshot = await storiesRef.get();
       

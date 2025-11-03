@@ -153,8 +153,8 @@ export async function GET(req: NextRequest): Promise<Response> {
     }
 
     // Get stories by kid ID
-    if (userId && kidId) {
-      const stories = await firestoreServerService.getStoriesByKidId(userId, kidId);
+    if (kidId) {
+      const stories = await firestoreServerService.getStoriesByKidId(kidId);
       return NextResponse.json({
         success: true,
         stories

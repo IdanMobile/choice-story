@@ -137,10 +137,19 @@ export class ImageGenerationApi {
       let response;
       if (isAvatarGeneration) {
         // Generate avatar using Firebase function
+        // Validate that environment is present for avatar generation
+        if (!options.environment) {
+          return {
+            success: false,
+            error: "environment is required for avatar generation"
+          };
+        }
+        
         const avatarRequest = {
           imageUrl: kidDetails.avatarUrl || "", // Use kid's avatar as reference
           accountId: userId, // Using userId as accountId for now
-          userId: userId
+          userId: userId,
+          environment: options.environment
         };
         
         console.log("[ImageGeneration] Calling Firebase generateKidAvatarImage with:", avatarRequest);
@@ -206,7 +215,7 @@ export class ImageGenerationApi {
   /**
    * Generate avatar image
    */
-  static async generateAvatarImage(userId: string, kidDetails: KidDetails, characteristics: string): Promise<ImageGenerationResult> {
+  static async generateAvatarImage(userId: string, kidDetails: KidDetails, characteristics: string, environment: 'development' | 'production' = 'development'): Promise<ImageGenerationResult> {
     const prompt = PromptTemplates.AVATAR_BASE_PROMPT(kidDetails.age, kidDetails.gender, characteristics);
     
     return this.generateImage({
@@ -215,6 +224,7 @@ export class ImageGenerationApi {
       prompt,
       outputCount: 2,
       folderPath: `users/${userId}/avatars`,
+      environment: environment,
       parameters: {
         model: 'dall-e-3',
         quality: 'hd',
