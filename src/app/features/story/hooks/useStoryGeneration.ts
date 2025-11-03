@@ -5,6 +5,7 @@ import { Story, StoryStatus, KidDetails, Account } from '@/models';
 import { StoryTemplates } from '@/app/_lib/services/prompt_templats';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { functionClientAPI } from '@/app/network/functions';
+import { getFirebaseEnvironment } from '@/config/build-config';
 
 interface UseStoryGenerationProps {
   kidDetails: KidDetails;
@@ -73,6 +74,7 @@ export const useStoryGeneration = ({
     // Initialize empty story for progress tracking
     let newStory: Story = {
       id: "",
+      accountId: currentUser.uid,
       userId: currentUser.uid,
       kidId: kidDetails.id,
       title: "",
@@ -124,6 +126,7 @@ export const useStoryGeneration = ({
         advantages: newStory.advantages || "",
         disadvantages: newStory.disadvantages || "",
         accountId: currentUser.uid,
+        environment: getFirebaseEnvironment(),
         userId: currentUser.uid,
         storyId: storyId
       });

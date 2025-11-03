@@ -54,6 +54,7 @@ export class StoryService {
     if (!story) {
       return {
         id: '',
+        accountId: '',
         kidId: '',
         userId: '',
         title: 'Untitled Story',
@@ -70,6 +71,7 @@ export class StoryService {
     // Return a normalized version with all required fields
     return {
       id: story.id || '',
+      accountId: story.accountId || story.userId || '',
       kidId: story.kidId || '',
       userId: story.userId || '',
       title: story.title || 'Untitled Story',

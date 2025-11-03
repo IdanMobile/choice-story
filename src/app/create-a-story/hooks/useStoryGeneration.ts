@@ -4,6 +4,7 @@ import { StoryTemplates } from "@/app/_lib/services/prompt_templats";
 import { functionClientAPI } from '@/app/network/functions';
 import useCreateStoryState from "../state/create-story-state";
 import useCreateStoryProgressState from "../state/progress-state";
+import { getFirebaseEnvironment } from '@/config/build-config';
 
 /**
  * Custom hook for handling story generation API calls and state updates
@@ -165,6 +166,7 @@ export function useStoryGeneration() {
         disadvantages: disadvantages || "",
         accountId: userId, // Using userId as accountId
         userId: userId,
+        environment: getFirebaseEnvironment(),
         storyId
       });
 

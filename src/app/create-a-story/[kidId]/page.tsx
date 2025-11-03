@@ -353,6 +353,7 @@ export default function CreateAStoryPage() {
                   // Create a consistent story object with latest state
                   const previewStory: Story = {
                     id: "preview-id",
+                    accountId: currentUser?.uid || "",
                     title: state.selectedTitle || "",
                     pages: state.pages || [],
                     kidId: kidId,

@@ -293,6 +293,7 @@ export class ImageGenerationApi {
 
     const kidDetails: KidDetails = {
       id: kidId,
+      accountId: userId || '',
       age: kidAge,
       gender: kidGender as Gender,
       names: [kidName as unknown as Name],

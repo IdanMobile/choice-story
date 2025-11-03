@@ -8,6 +8,7 @@ import { verifyAuthHeader } from "@/app/utils/auth-helpers";
 const CreateStorySchema = z.object({
   id: z.string().optional(),
   userId: z.string(),
+  accountId: z.string(),
   kidId: z.string(),
   title: z.string(),
   problemDescription: z.string(),

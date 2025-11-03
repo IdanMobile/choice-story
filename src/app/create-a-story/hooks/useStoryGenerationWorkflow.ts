@@ -333,6 +333,7 @@ export function useStoryGenerationWorkflow({
         // The pages should already have the correct image URLs from the component state
         const storyToSave: Story = {
           id: "", // ID will be assigned by the backend on creation
+          accountId: currentUser.uid,
           userId: currentUser.uid,
           kidId: kidId,
           title: selectedTitle,

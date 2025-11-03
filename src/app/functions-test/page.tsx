@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { functionClientAPI } from '@/app/network/functions';
+import { getFirebaseEnvironment } from '@/config/build-config';
 
 export default function FunctionsTestPage() {
   return (
@@ -38,6 +39,7 @@ function StoryPagesTextTest() {
     disadvantages: 'Missing out on fun activities',
     accountId: 'test-account-123',
     userId: 'test-user-456',
+    environment: getFirebaseEnvironment(),
     storyId: 'test-story-789',
   });
 
@@ -219,6 +221,7 @@ function KidAvatarImageTest() {
     imageUrl: 'https://example.com/kid-photo.jpg',
     accountId: 'test-account-123',
     userId: 'test-user-456',
+    environment: getFirebaseEnvironment(),
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -304,6 +307,7 @@ function StoryPageImageTest() {
     imageUrl: 'https://example.com/kid-photo.jpg',
     accountId: 'test-account-123',
     userId: 'test-user-456',
+    environment: getFirebaseEnvironment(),
     storyId: 'test-story-789',
   });
 
@@ -401,6 +405,7 @@ function StoryCoverImageTest() {
     imageUrl: 'https://example.com/kid-photo.jpg',
     accountId: 'test-account-123',
     userId: 'test-user-456',
+    environment: getFirebaseEnvironment(),
     storyId: 'test-story-789',
   });
 

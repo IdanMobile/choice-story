@@ -103,6 +103,14 @@ class FirestoreServerService {
   }
 
   /**
+   * Get user (account) data by UID - alias for getAccountByUid
+   * @param uid User's Firebase Auth UID
+   */
+  async getUserByUid(uid: string) {
+    return this.getAccountByUid(uid);
+  }
+
+  /**
    * Create a new kid in Firestore
    * Note: users_{environment} collection contains kid documents, not account/user data
    * @param kidData Kid data including id
@@ -636,6 +644,24 @@ class FirestoreServerService {
       console.error('Error updating account data:', error);
       throw error;
     }
+  }
+
+  /**
+   * Update user (account) data - alias for updateAccountData
+   * @param accountData Account data with fields to update
+   * @returns The updated account data
+   */
+  async updateUserData(accountData: Account): Promise<Account> {
+    return this.updateAccountData(accountData);
+  }
+
+  /**
+   * Create user (account) data - alias for createAccountData
+   * @param accountData Account data including uid
+   * @returns The created account data
+   */
+  async createUserData(accountData: Account): Promise<Account> {
+    return this.createAccountData(accountData);
   }
 }
 

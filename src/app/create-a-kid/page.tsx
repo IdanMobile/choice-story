@@ -40,6 +40,7 @@ export default function CreateAKidPage() {
     if (!kidDetails) {
       setKidDetails({
         id: '',
+        accountId: user?.uid || '',
         names: [],
         name: '',
         age: 0,
@@ -176,6 +177,7 @@ export default function CreateAKidPage() {
       // Save kid using KidApi
       const kidDetailsToSave: KidDetails = {
         id: kidDetails.id,
+        accountId: currentUser.uid,
         names: kidDetails.names,
         age: kidDetails.age,
         gender: kidDetails.gender,

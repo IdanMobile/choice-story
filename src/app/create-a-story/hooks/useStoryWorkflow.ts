@@ -320,6 +320,7 @@ export function useStoryWorkflow(initialData?: {
       // Create a complete story object directly from our state
       const storyData: Story = {
         id: story.id || "",
+        accountId: finalUserId,
         kidId: finalKidId,
         userId: finalUserId,
         title: title || "",

@@ -35,7 +35,7 @@ const useFirestoreState = create<FirestoreState>((set) => ({
   fetchUsers: async (accountId: string) => {
     try {
       set({ loading: true, error: null });
-      const users = await firestoreService.getUsersByAccountId(accountId);
+      const users = await firestoreService.getKidsByAccountId(accountId);
       console.log('Fetched users:', users);
       set({ users, loading: false });
     } catch (error) {

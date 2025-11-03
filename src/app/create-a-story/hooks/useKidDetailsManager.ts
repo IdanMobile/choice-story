@@ -73,6 +73,7 @@ export function useKidDetailsManager(userId: string | null | undefined, kidId: s
       // If we still have missing properties, use defaults
       const safeKidDetails: KidDetails = {
         id: kidId,
+        accountId: kidDetails?.accountId || "",
         names: kidDetails?.names || [],
         name: kidDetails?.name || "Child",
         gender: kidDetails?.gender || Gender.male,

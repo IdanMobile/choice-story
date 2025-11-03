@@ -13,6 +13,7 @@ export const ImageGenerationExample: React.FC = () => {
   const mockUser = { uid: 'user123' };
   const mockKid: KidDetails = {
     id: 'kid123',
+    accountId: 'user123',
     names: [{ firstName: 'Emma', lastName: 'Smith', languageCode: 'en' }],
     age: 8,
     gender: Gender.female,

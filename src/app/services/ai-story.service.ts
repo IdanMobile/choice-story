@@ -11,6 +11,7 @@ import { Story, PageType, StoryStatus, KidDetails } from "@/models";
 import { AIErrorHandlerService } from "./ai-error-handler.service";
 import { StoryTemplates } from "@/app/_lib/services/prompt_templats";
 import { functionClientAPI } from "@/app/network/functions";
+import { getFirebaseEnvironment } from "@/config/build-config";
 
 
 export interface AIStoryGenerationRequest {
@@ -80,6 +81,7 @@ export class AIStoryService {
               disadvantages: request.disadvantages || "",
               accountId: request.userId, // Using userId as accountId for now
               userId: request.userId,
+              environment: getFirebaseEnvironment(),
               storyId: storyId
             };
             
@@ -104,6 +106,7 @@ export class AIStoryService {
             // Create a story object with the parsed pages
             const story: Story = {
               id: storyId,
+              accountId: request.userId,
               kidId: request.kidDetails.id,
               userId: request.userId,
               title: request.title,
@@ -174,6 +177,7 @@ export class AIStoryService {
               imageUrl: request.kidDetails.avatarUrl || "", // Use kid's avatar as reference
               accountId: request.userId, // Using userId as accountId for now
               userId: request.userId,
+              environment: getFirebaseEnvironment(),
               storyId: '' // No story ID for standalone generation
             };
             

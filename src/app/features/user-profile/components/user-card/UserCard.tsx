@@ -340,7 +340,7 @@ export const UserCard: React.FC<UserCardProps> = memo(({
       }
       
       // Use KidApi to delete kid - use kid.id directly instead of kidId
-      const response = await KidApi.deleteKid(currentUser.uid, kid.id);
+      const response = await KidApi.deleteKid(kid.id);
       
       if (!response.success) {
         throw new Error(response.error || t.userCard.failedToDeleteKid);

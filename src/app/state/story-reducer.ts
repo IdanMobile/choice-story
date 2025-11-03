@@ -111,6 +111,7 @@ export const storyReducer = (state: StoryState, action: StoryAction): StoryState
 
 export const createEmptyStory = (userId: string, kidId: string): Story => ({
   id: '',
+  accountId: userId,
   title: '',
   pages: [],
   kidId,
