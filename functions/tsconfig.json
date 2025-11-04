@@ -12,13 +12,17 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
-    "rootDir": "src"
+    "allowSyntheticDefaultImports": true
   },
   "compileOnSave": true,
   "include": [
-    "src/**/*"
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "lib",
+    "src/**/*.test.ts",
+    "src/**/__tests__/**"
   ]
 }
 
