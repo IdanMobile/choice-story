@@ -29,6 +29,15 @@ jobs:
     - name: Type check with TypeScript
       run: npx tsc --noEmit
       
+    - name: Debug - Show what GitHub sees
+      run: |
+        echo "=== GitHub Context Debug ==="
+        echo "Environment name: production"
+        echo "Checking what vars are available from GitHub Environment..."
+        echo "API_KEY from vars: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY != '' }}"
+        echo "AUTH_DOMAIN from vars: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN != '' }}"
+        echo "PROJECT_ID from vars: ${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID != '' }}"
+        
     - name: Verify environment variables before build
       run: |
         echo "=== Checking Firebase environment variables ==="
@@ -43,6 +52,8 @@ jobs:
         echo "=== Verifying all required variables are set ==="
         if [ -z "$NEXT_PUBLIC_FIREBASE_API_KEY" ]; then
           echo "❌ NEXT_PUBLIC_FIREBASE_API_KEY is missing!"
+          echo "This means the variable is not set in your GitHub Environment 'production'"
+          echo "Please check: Settings → Environments → production → Environment variables"
           exit 1
         fi
         if [ -z "$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN" ]; then
@@ -68,7 +79,6 @@ jobs:
         echo "✅ All Firebase environment variables are set!"
       env:
         # Use Environment Variables from GitHub Environment 'production'
-        # If you added them as Environment Secrets instead, change vars.* to secrets.*
         NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
         NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
         NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
