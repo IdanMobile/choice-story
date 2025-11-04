@@ -28,9 +28,9 @@ jobs:
     - name: Type check with TypeScript
       run: npx tsc --noEmit
       
-    - name: Verify environment variables
+    - name: Verify environment variables before build
       run: |
-        echo "Checking Firebase environment variables..."
+        echo "=== Checking Firebase environment variables ==="
         echo "NEXT_PUBLIC_FIREBASE_API_KEY: ${NEXT_PUBLIC_FIREBASE_API_KEY:0:10}..." 
         echo "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: $NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"
         echo "NEXT_PUBLIC_FIREBASE_PROJECT_ID: $NEXT_PUBLIC_FIREBASE_PROJECT_ID"
@@ -38,6 +38,33 @@ jobs:
         echo "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: $NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID"
         echo "NEXT_PUBLIC_FIREBASE_APP_ID: $NEXT_PUBLIC_FIREBASE_APP_ID"
         echo "NEXT_PUBLIC_FIREBASE_ENV: $NEXT_PUBLIC_FIREBASE_ENV"
+        echo ""
+        echo "=== Verifying all required variables are set ==="
+        if [ -z "$NEXT_PUBLIC_FIREBASE_API_KEY" ]; then
+          echo "❌ NEXT_PUBLIC_FIREBASE_API_KEY is missing!"
+          exit 1
+        fi
+        if [ -z "$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN" ]; then
+          echo "❌ NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is missing!"
+          exit 1
+        fi
+        if [ -z "$NEXT_PUBLIC_FIREBASE_PROJECT_ID" ]; then
+          echo "❌ NEXT_PUBLIC_FIREBASE_PROJECT_ID is missing!"
+          exit 1
+        fi
+        if [ -z "$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET" ]; then
+          echo "❌ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is missing!"
+          exit 1
+        fi
+        if [ -z "$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID" ]; then
+          echo "❌ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID is missing!"
+          exit 1
+        fi
+        if [ -z "$NEXT_PUBLIC_FIREBASE_APP_ID" ]; then
+          echo "❌ NEXT_PUBLIC_FIREBASE_APP_ID is missing!"
+          exit 1
+        fi
+        echo "✅ All Firebase environment variables are set!"
       env:
         NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
         NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
