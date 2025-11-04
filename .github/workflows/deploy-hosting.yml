@@ -64,6 +64,13 @@ jobs:
       env:
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
       
+    - name: Enable Firebase Web Frameworks experiment
+      run: |
+        firebase use choicestory-b3135 --token "$FIREBASE_TOKEN"
+        firebase experiments:enable webframeworks --token "$FIREBASE_TOKEN" || echo "⚠️  Experiment may already be enabled"
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+      
     - name: Deploy to Firebase Hosting
       run: |
         firebase use choicestory-b3135 --token "$FIREBASE_TOKEN"
