@@ -255,10 +255,7 @@ export function useStoryGenerationWorkflow({
         // Get the environment explicitly
         const environment = getFirebaseEnvironment();
         
-        // Note: storyId is not used by the function anymore (Firestore auto-generates IDs)
-        // We pass an empty string to satisfy the function signature
-        const storyId = "";
-        
+        // Note: storyId is optional and not needed when initially generating the story
         console.log("Calling Firebase generateStoryPagesText with:", {
           name: kidDetails.name || 'Child',
           problemDescription,
@@ -268,7 +265,6 @@ export function useStoryGenerationWorkflow({
           disadvantages: disadvantages || "",
           accountId: currentUser?.uid || "",
           userId: currentUser?.uid || "",
-          storyId,
           environment
         });
 
@@ -281,7 +277,6 @@ export function useStoryGenerationWorkflow({
           disadvantages: disadvantages || "",
           accountId: currentUser?.uid || "", // Using userId as accountId
           userId: currentUser?.uid || "",
-          storyId,
           environment
         });
 

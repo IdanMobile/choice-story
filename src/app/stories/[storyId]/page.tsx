@@ -11,6 +11,7 @@ import ErrorMessage from '@/app/components/ui/ErrorMessage';
 import { StoryPageCard } from '@/app/features/story/components/story/StoryPageCard';
 import { useTranslation } from '@/app/hooks/useTranslation';
 import { toast } from '@/components/ui/use-toast';
+import { Share2, Copy, Check } from 'lucide-react';
 
 export default function StoryPageComponent() {
   const { storyId, kidId } = useParams();
@@ -24,6 +25,7 @@ export default function StoryPageComponent() {
   const [kid, setKid] = useState<KidDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Helper function to create a unique page identifier
   const getPageId = (page: StoryPage) => `${page.pageNum}-${page.pageType}`;
@@ -71,6 +73,49 @@ export default function StoryPageComponent() {
       fetchStoryData();
     }
   }, [storyId, currentUser, fetchStoryData]);
+
+  // Handler for copying story link
+  const handleCopyLink = async () => {
+    const shareUrl = `${window.location.origin}/stories/${storyId}/read`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      toast({
+        title: "Link Copied!",
+        description: "Story link has been copied to clipboard",
+        variant: "default",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy link:', error);
+      toast({
+        title: "Error",
+        description: "Failed to copy link",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handler for sharing story
+  const handleShareStory = async () => {
+    const shareUrl = `${window.location.origin}/stories/${storyId}/read`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: story?.title || 'Story',
+          text: story?.problemDescription || 'Check out this story!',
+          url: shareUrl,
+        });
+      } catch (error) {
+        // User cancelled or error occurred
+        console.log('Share cancelled or failed:', error);
+      }
+    } else {
+      // Fallback to copy link if Web Share API is not supported
+      handleCopyLink();
+    }
+  };
 
   // Handler for saving story to server
   const handleSaveStory = async (updatedStory: Story) => {
@@ -142,12 +187,28 @@ export default function StoryPageComponent() {
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold mb-4">{story.title}</h1>
         <p className="text-gray-600 max-w-2xl mx-auto mb-6">{story.problemDescription}</p>
-        <button
-          onClick={() => router.push(`/stories/${storyId}/read?kidId=${story.kidId}`)}
-          className="px-6 py-2 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors shadow-md"
-        >
-          {t.story.readStory}
-        </button>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button
+            onClick={() => router.push(`/stories/${storyId}/read`)}
+            className="px-6 py-2 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors shadow-md"
+          >
+            {t.story.readStory}
+          </button>
+          <button
+            onClick={handleShareStory}
+            className="px-6 py-2 rounded-md bg-green-600 text-white font-bold hover:bg-green-700 transition-colors shadow-md flex items-center gap-2"
+          >
+            <Share2 size={18} />
+            Share Story
+          </button>
+          <button
+            onClick={handleCopyLink}
+            className="px-6 py-2 rounded-md bg-purple-600 text-white font-bold hover:bg-purple-700 transition-colors shadow-md flex items-center gap-2"
+          >
+            {copied ? <Check size={18} /> : <Copy size={18} />}
+            {copied ? 'Copied!' : 'Copy Link'}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

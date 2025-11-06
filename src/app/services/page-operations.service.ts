@@ -4,6 +4,7 @@ import { ImageGenerationApi } from "@/app/network/ImageGenerationApi";
 import { StoryApi } from "@/app/network/StoryApi";
 import { GenerateImageResponse } from "@/app/api/story/generate-images/types";
 import { ApiResponse } from "@/models";
+import { getFirebaseEnvironment } from "@/config/build-config";
 
 export class PageOperationsService {
   /**
@@ -45,11 +46,15 @@ export class PageOperationsService {
     userId: string,
     kid: KidDetails
   ): Promise<string> {
+    // Get environment explicitly
+    const environment = getFirebaseEnvironment();
+    
     // Use the unified ImageGenerationApi
     const result = await ImageGenerationApi.generateStoryImage(
       userId,
       kid,
-      page.imagePrompt || `Generate image for ${page.pageType} page`
+      page.imagePrompt || `Generate image for ${page.pageType} page`,
+      environment
     );
     
     // Check if the API call was successful

@@ -20,14 +20,14 @@ export interface StoryPagesTextRequest {
   disadvantages: string;
   accountId: string;
   userId: string;
-  storyId: string;
+  storyId?: string; // Optional: not available when initially generating the story
   environment: string; // Required for Firestore collection paths
 }
 
 export interface StoryPagesTextResponse {
   success: boolean;
   text: string;
-  storyId: string;
+  storyId?: string; // Optional: may not be available when initially generating the story
 }
 
 export interface StoryImagePromptRequest {

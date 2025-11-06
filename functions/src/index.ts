@@ -263,7 +263,7 @@ interface StoryPagesTextParams {
   disadvantages: string;
   accountId: string;
   userId: string;
-  storyId: string;
+  storyId?: string; // Optional: not available when initially generating the story
   environment: string;
 }
 
@@ -290,7 +290,7 @@ Moral Disadvantages: ${disadvantages}`;
   // NOTE: We do NOT save to Firestore here anymore to avoid duplication
   // The client will save the complete story with all pages and details
   
-  functions.logger.info(`Generated story text for storyId: ${storyId}, length: ${text.length}`);
+  functions.logger.info(`Generated story text${storyId ? ` for storyId: ${storyId}` : ''}, length: ${text.length}`);
 
   return {
     success: true,
@@ -378,10 +378,10 @@ export const generateStoryPagesText = functions.https.onCall(
     try {
       const { name, problemDescription, title, age, advantages, disadvantages, accountId, userId, storyId, environment } = data;
 
-      if (!name || !problemDescription || !title || !age || !advantages || !disadvantages || !accountId || !userId || !storyId || !environment) {
+      if (!name || !problemDescription || !title || !age || !advantages || !disadvantages || !accountId || !userId || !environment) {
         throw new functions.https.HttpsError(
           "invalid-argument",
-          "All fields are required: name, problemDescription, title, age, advantages, disadvantages, accountId, userId, storyId, environment"
+          "All fields are required: name, problemDescription, title, age, advantages, disadvantages, accountId, userId, environment. storyId is optional."
         );
       }
 
@@ -455,10 +455,11 @@ export const generateStoryPagesTextHttp = functions.https.onRequest(
 
       const { name, problemDescription, title, age, advantages, disadvantages, accountId, userId, storyId, environment } = request.body;
 
-      if (!name || !problemDescription || !title || !age || !advantages || !disadvantages || !accountId || !userId || !storyId || !environment) {
+      if (!name || !problemDescription || !title || !age || !advantages || !disadvantages || !accountId || !userId || !environment) {
         response.status(400).json({
           error: 'Missing required fields',
-          required: ['name', 'problemDescription', 'title', 'age', 'advantages', 'disadvantages', 'accountId', 'userId', 'storyId', 'environment']
+          required: ['name', 'problemDescription', 'title', 'age', 'advantages', 'disadvantages', 'accountId', 'userId', 'environment'],
+          optional: ['storyId']
         });
         return;
       }

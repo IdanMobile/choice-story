@@ -78,10 +78,11 @@ export const StoryPageImageGenerator: React.FC<StoryPageImageGeneratorProps> = (
     }
   };
 
+  // Get environment explicitly - used for both updatePath and API calls
+  const environment = getFirebaseEnvironment();
+  
   // Generate the updatePath using the same logic as the API
   const getUpdatePath = (page: StoryPage): string => {
-    // Get environment explicitly
-    const environment = getFirebaseEnvironment();
     const storiesCollection = `stories_gen_${environment}`;
     const fieldPath = `pages/${page.pageNum}/selectedImageUrl`;
     const fullUpdatePath = `${storiesCollection}/${storyId}/${fieldPath}`;
@@ -149,6 +150,7 @@ export const StoryPageImageGenerator: React.FC<StoryPageImageGeneratorProps> = (
       onClose={onClose}
       isGeneratingImage={isGeneratingImage}
       hideCardWrapper={true} // Hide the card wrapper for cleaner UI
+      environment={environment} // Pass the environment to ensure correct collection paths
     />
   );
 };

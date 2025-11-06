@@ -22,6 +22,7 @@ import { StoryImage } from '@/app/features/story/components/story/StoryImage';
 import { PLACEHOLDER_IMAGE } from '@/app/utils/imagePlaceholder';
 import { useTranslation } from '@/app/hooks/useTranslation';
 import { FirebaseError } from 'firebase/app';
+import { getFirebaseEnvironment } from '@/config/build-config';
 
 
 // Types 
@@ -81,10 +82,12 @@ const AvatarDialog: FC<{
     setAvatarError(null);
     
     try {
+      const environment = getFirebaseEnvironment();
       const result = await ImageGenerationApi.generateAvatarImage(
         userId,
         kid,
-        imageAnalysis ? (typeof imageAnalysis === 'string' ? imageAnalysis : JSON.stringify(imageAnalysis)) : ''
+        imageAnalysis ? (typeof imageAnalysis === 'string' ? imageAnalysis : JSON.stringify(imageAnalysis)) : '',
+        environment
       );
       
       console.log("[AVATAR_GENERATION] Full response:", result);

@@ -3,54 +3,42 @@ export const ENV_PROD: string = 'production';
 export const ENV_TEST: string = 'test';
 
 export const NODE_ENV: string = process.env.NODE_ENV || 'development';
-export const API_ENV: string = process.env.NODE_ENV || 'development';
-
 export const IS_PROD: boolean = NODE_ENV === ENV_PROD;
 export const IS_DEV: boolean = NODE_ENV === ENV_DEV;
 
 /**
- * Get the Firebase environment explicitly
- * Client-side: Uses NEXT_PUBLIC_FIREBASE_ENV
- * Server-side: Uses FIREBASE_ENV
- * Falls back to NODE_ENV if not set
+ * Get the Firebase environment based on NODE_ENV
+ * This determines which Firebase collections are used:
+ * - development → users_development, accounts_development, stories_gen_development
+ * - production → users_production, accounts_production, stories_gen_production
+ * 
+ * Priority order:
+ * 1. NODE_ENV (set at build time)
+ * 2. Hostname check (for client-side code - fallback if NODE_ENV is incorrect)
+ * 3. Default to 'development'
+ * 
+ * @returns 'development' or 'production'
  */
-export function getFirebaseEnvironment(): string {
-  // Check if we're on client or server
-  const isClient = typeof window !== 'undefined';
-  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || (process.env.NODE_ENV === 'production' && !isClient && !process.env.FIREBASE_PROJECT_ID);
-  
-  if (isClient) {
-    // Client-side: must use NEXT_PUBLIC_ prefix
-    const clientEnv = process.env.NEXT_PUBLIC_FIREBASE_ENV;
-    if (!clientEnv) {
-      if (!isBuildTime) {
-        console.error('[BUILD_CONFIG] NEXT_PUBLIC_FIREBASE_ENV not set, falling back to NODE_ENV');
-      }
-      return NODE_ENV;
-    }
-    return clientEnv;
-  } else {
-    // Server-side: can use regular env vars
-    const serverEnv = process.env.FIREBASE_ENV || process.env.NEXT_PUBLIC_FIREBASE_ENV;
-    if (!serverEnv) {
-      if (!isBuildTime) {
-        console.error('[BUILD_CONFIG] FIREBASE_ENV not set, falling back to NODE_ENV');
-      }
-      return NODE_ENV;
-    }
-    return serverEnv;
+export function getFirebaseEnvironment(): 'development' | 'production' {
+  // 1. Check NODE_ENV (set at build time)
+  const env = NODE_ENV;
+  if (env === 'production') {
+    return 'production';
   }
+  
+  // 2. For client-side code, check if we're on a production domain
+  // This is a fallback in case NODE_ENV wasn't set correctly during build
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // If not localhost or 127.0.0.1, assume production
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.includes('.local')) {
+      return 'production';
+    }
+  }
+  
+  // 3. Default to development
+  return 'development';
 }
-
-/**
- * Firebase environment - should be explicitly set via environment variables
- * Use getFirebaseEnvironment() for runtime access
- */
-export const FIREBASE_ENV: string = 
-  (typeof window !== 'undefined' 
-    ? process.env.NEXT_PUBLIC_FIREBASE_ENV 
-    : process.env.FIREBASE_ENV || process.env.NEXT_PUBLIC_FIREBASE_ENV
-  ) || NODE_ENV;
 
 // Base URLs configuration
 export const BASE_DOMAIN_LOCAL: string = process.env.NEXT_PUBLIC_BASE_URL_LOCAL || 'http://localhost:3000';

@@ -128,15 +128,11 @@ export async function POST(req: NextRequest) {
  */
 export async function GET(req: NextRequest): Promise<Response> {
   try {
-    const authHeader = req.headers.get('Authorization');
-    const decodedToken = await verifyAuthHeader(authHeader);
-    const _authenticatedUid = decodedToken?.uid;
-    
     const storyId = req.nextUrl.searchParams.get("storyId");
     const userId = req.nextUrl.searchParams.get("userId");
     const kidId = req.nextUrl.searchParams.get("kidId");
 
-    // Get single story by ID
+    // Get single story by ID - Allow public access for sharing
     if (storyId) {
       const story = await firestoreServerService.getStoryById(storyId);
       
@@ -152,6 +148,11 @@ export async function GET(req: NextRequest): Promise<Response> {
         story
       }, { status: 200 });
     }
+
+    // For listing stories (by kidId), require authentication
+    const authHeader = req.headers.get('Authorization');
+    const decodedToken = await verifyAuthHeader(authHeader);
+    const _authenticatedUid = decodedToken?.uid;
 
     // Get stories by kid ID
     if (kidId) {

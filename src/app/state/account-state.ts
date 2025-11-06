@@ -70,7 +70,7 @@ const useAccountState = create<AccountState>((set, get) => ({
       const accountData = {
         uid: user.uid,
         email: user.email || '',
-        displayName: user.displayName || '',
+        displayName: user.displayName || undefined,
         photoURL: user.photoURL || undefined,
         phoneNumber: user.phoneNumber || undefined,
         metadata: {},

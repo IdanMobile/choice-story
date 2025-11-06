@@ -240,7 +240,8 @@ export class ImageGenerationApi {
   static async generateStoryImage(
     userId: string, 
     kidDetails: KidDetails, 
-    customPrompt: string
+    customPrompt: string,
+    environment: 'development' | 'production' = 'development'
   ): Promise<ImageGenerationResult> {
     const finalPrompt = `Create img vibrant, Pixar-like 3D style: ${customPrompt}. Make it engaging and appropriate for a ${kidDetails.age}-year-old ${kidDetails.gender}.`;
     
@@ -250,6 +251,7 @@ export class ImageGenerationApi {
       prompt: finalPrompt,
       outputCount: 1,
       folderPath: `users/${userId}/stories`,
+      environment: environment,
       parameters: {
         model: 'dall-e-3',
         quality: 'hd',
@@ -272,6 +274,7 @@ export class ImageGenerationApi {
     isGoodChoice: boolean;
     userId?: string;
     kidId?: string;
+    environment?: 'development' | 'production';
   }): Promise<ImageGenerationResult> {
     const { 
       choiceDescription, 
@@ -308,6 +311,7 @@ export class ImageGenerationApi {
       prompt,
       outputCount: 1,
       folderPath: `users/${userId}/choices`,
+      environment: params.environment || 'development',
       parameters: {
         model: 'dall-e-3',
         quality: 'hd',

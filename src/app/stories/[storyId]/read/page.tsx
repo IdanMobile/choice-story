@@ -840,7 +840,7 @@ export default function StoryReaderPage() {
   };
 
   const handleFinish = () => {
-    router.push(`/stories/${storyId}`);
+    // No redirect for public story reading
   };
 
   const handleSelectChoice = (choice: 'good' | 'bad') => {
@@ -871,13 +871,10 @@ export default function StoryReaderPage() {
       setSurveyCompleted(true);
       setShowSurvey(false);
 
-      // Show success message briefly then navigate away or close
-      setTimeout(() => {
-        router.push(`/stories/${storyId}`);
-      }, 2000);
+      // Show success message (no redirect for public story reading)
     } catch (error) {
       console.error('Error saving end of story selection:', error);
-      // Still mark as completed to not block the user
+      // Still mark as completed to not block the user (no redirect for public reading)
       setSurveyCompleted(true);
       setShowSurvey(false);
     }

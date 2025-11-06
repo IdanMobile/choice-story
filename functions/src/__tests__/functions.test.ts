@@ -119,7 +119,7 @@ describe('Cloud Functions', () => {
 
       await expect(
         (generateStoryPagesText as any).run(mockData, mockContext)
-      ).rejects.toThrow('All fields are required');
+      ).rejects.toThrow('All fields are required: name, problemDescription, title, age, advantages, disadvantages, accountId, userId, environment. storyId is optional.');
     });
   });
 

@@ -8,6 +8,7 @@ import { KidApi, StoryApi, TextGenerationApi, ImageGenerationApi } from '@/app/n
 import { StoryTemplates } from '@/app/_lib/services/prompt_templats';
 import { functionClientAPI } from '@/app/network/functions';
 import { toast } from '@/components/ui/use-toast';
+import { getFirebaseEnvironment } from '@/config/build-config';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -142,10 +143,12 @@ export default function StoryTestPage() {
 
     setIsGeneratingAvatar(true);
     try {
+      const environment = getFirebaseEnvironment();
       const result = await ImageGenerationApi.generateAvatarImage(
         currentUser.uid,
         selectedKid,
-        selectedKid.imageAnalysis
+        selectedKid.imageAnalysis,
+        environment
       );
 
       if (result.success && result.data) {
@@ -329,11 +332,13 @@ export default function StoryTestPage() {
 
     setIsGeneratingImage(true);
     try {
+      const environment = getFirebaseEnvironment();
       const result = await ImageGenerationApi.generateImage({
         userId: currentUser.uid,
         kidDetails: selectedKid,
         prompt: customImagePrompt,
-        outputCount: 1
+        outputCount: 1,
+        environment
       });
 
       if (result.success && result.data && result.data.length > 0) {

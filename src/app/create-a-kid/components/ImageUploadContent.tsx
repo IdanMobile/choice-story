@@ -185,8 +185,8 @@ export default function ImageUploadContent() {
         // The API already returns ImageRequirementsCheckResponse, so use it directly
         setImageRequirements(response.data);
         
-        // Update the current image URL to the Firebase Storage URL
-        setCurrentImageUrl(firebaseImageUrl);
+        // Keep the original preview URL - don't switch to Firebase URL
+        // The image is already uploaded to Firebase and we have the URL for saving later
       } catch (requirementsError) {
         console.error("Error checking requirements:", requirementsError);
         setError(t.validation.analysisError);

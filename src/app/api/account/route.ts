@@ -83,11 +83,11 @@ export async function POST(req: NextRequest) {
     console.log(`[/api/account] POST - Request body UID: ${body.uid}, email: ${body.email}`);
     
     // Validate required fields
-    if (!body.uid || !body.email || !body.displayName) {
+    if (!body.uid || !body.email) {
       return NextResponse.json({
         success: false,
         error: "Missing required fields",
-        message: "uid, email, and displayName are required"
+        message: "uid and email are required"
       }, { status: 400 });
     }
     

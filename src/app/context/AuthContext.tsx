@@ -55,7 +55,7 @@ const convertToDomainUser = (user: FirebaseUser | null): Account | null => {
   if (!user) return null;
   return {
     uid: user.uid,
-    displayName: user.displayName || '',
+    displayName: user.displayName || undefined,
     email: user.email || '',
     photoURL: user.photoURL || undefined,
     phoneNumber: user.phoneNumber || undefined,
