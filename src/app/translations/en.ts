@@ -192,6 +192,7 @@ export const enTranslations: Translation = {
     female: "Female",
   },
   quickGenerateDialog: {
+    add: "Add",
     generateStory: "Generate Story",
     title: "Generate Story",
     description: "Enter a problem to generate a new story",

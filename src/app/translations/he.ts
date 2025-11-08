@@ -192,6 +192,7 @@ export const heTranslations: Translation = {
     female: "נקבה",
   },
   quickGenerateDialog: {
+    add: "הוסף",
     generateStory: "יצירת סיפור",
     title: "יצירת סיפור",
     description: "הזן בעיה ליצירת סיפור חדש",

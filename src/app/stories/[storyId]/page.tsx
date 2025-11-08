@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Story, KidDetails, StoryPage } from '@/models';
 import { useAuth } from '@/app/context/AuthContext';
@@ -8,7 +8,7 @@ import { StoryApi } from '@/app/network/StoryApi';
 import useKidsState from '@/app/state/kids-state';
 import LoadingIndicator from '@/app/components/ui/LoadingIndicator';
 import ErrorMessage from '@/app/components/ui/ErrorMessage';
-import { StoryPageCard } from '@/app/features/story/components/story/StoryPageCard';
+import { StoryPageCard, StoryPageCardHandle } from '@/app/features/story/components/story/StoryPageCard';
 import { useTranslation } from '@/app/hooks/useTranslation';
 import { toast } from '@/components/ui/use-toast';
 import { Share2, Copy, Check } from 'lucide-react';
@@ -26,6 +26,7 @@ export default function StoryPageComponent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const storyPageRefs = useRef<Record<string, StoryPageCardHandle | null>>({});
 
   // Helper function to create a unique page identifier
   const getPageId = (page: StoryPage) => `${page.pageNum}-${page.pageType}`;
@@ -159,6 +160,22 @@ export default function StoryPageComponent() {
     }
   };
 
+  const handleGenerateMissingImages = () => {
+    if (!currentUser || !kid || !story) {
+      return;
+    }
+
+    story.pages.forEach((page) => {
+      if (page.selectedImageUrl) {
+        return;
+      }
+
+      const pageId = getPageId(page);
+      const cardHandle = storyPageRefs.current[pageId];
+      cardHandle?.triggerGenerateImage();
+    });
+  };
+
   if (loading || authLoading) return <LoadingIndicator message={t.dashboard.refreshing} />;
   if (error) {
     return (
@@ -215,26 +232,58 @@ export default function StoryPageComponent() {
         {story.pages.map((page) => (
           <StoryPageCard 
             key={getPageId(page)}
+            ref={(ref) => {
+              const pageId = getPageId(page);
+              if (ref) {
+                storyPageRefs.current[pageId] = ref;
+              } else {
+                delete storyPageRefs.current[pageId];
+              }
+            }}
             page={page}
             story={story}
             kid={kid}
             useAIBots={true} // Enable new AI bot system for Phase 2
-            onPageUpdate={async (updatedPage) => {
+            onPageUpdate={(updatedPage, options) => {
+              let updatedStory: Story | null = null;
+
               // Optimistically update local state for immediate UI feedback
-              const updatedStory = {
-                ...story,
-                pages: story.pages.map(p => 
+              setStory((prevStory) => {
+                if (!prevStory) {
+                  return prevStory;
+                }
+
+                const updatedPages = prevStory.pages.map((p) =>
                   p.pageNum === updatedPage.pageNum && p.pageType === updatedPage.pageType ? updatedPage : p
-                )
-              };
-              setStory(updatedStory);
-              
-              // Save the entire story (Firebase function handles image updates automatically)
-              handleSaveStory(updatedStory);
+                );
+
+                updatedStory = {
+                  ...prevStory,
+                  pages: updatedPages,
+                };
+
+                return updatedStory;
+              });
+
+              // Skip saving if the update was already persisted server-side (e.g., image generation)
+              if (!options?.skipPersist && updatedStory) {
+                void handleSaveStory(updatedStory);
+              }
             }}
           />
         ))}
       </div>
+      {currentUser && kid && (
+        <div className="mt-10 flex justify-center">
+          <button
+            onClick={handleGenerateMissingImages}
+            className="px-6 py-3 rounded-md bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!story.pages.some((page) => !page.selectedImageUrl)}
+          >
+            Generate Missing Images
+          </button>
+        </div>
+      )}
     </div>
   );
 } 

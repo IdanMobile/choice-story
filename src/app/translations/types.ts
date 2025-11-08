@@ -187,6 +187,7 @@ export interface Translation {
     female: string;
   };
   quickGenerateDialog: {
+    add: string;
     generateStory: string;
     title: string;
     description: string;

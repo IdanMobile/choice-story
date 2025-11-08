@@ -1,11 +1,19 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import ImageUrl from '@/app/components/common/ImageUrl';
 import { Story, StoryPage, PageType } from '@/models';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StoryApi } from '@/app/network/StoryApi';
+
+type ScreenCategory = 'small' | 'medium' | 'large';
+
+const getScreenCategory = (width: number): ScreenCategory => {
+  if (width < 768) return 'small';
+  if (width < 1280) return 'medium';
+  return 'large';
+};
 
 
 // Types
@@ -21,6 +29,7 @@ interface StoryReaderProps {
   showSurvey: boolean;
   onSelectFinalChoice: (choice: 'good' | 'bad') => void;
   surveyCompleted: boolean;
+  screenCategory: ScreenCategory;
 }
 
 // Helper function to detect if text contains Hebrew characters
@@ -52,10 +61,26 @@ const ErrorMessage = ({ message }: { message: string }) => (
   </div>
 );
 
-const StoryPageComponent = ({ page, overlayDimmed, onToggleOverlay }: { page: StoryPage, overlayDimmed: boolean, onToggleOverlay: () => void }) => {
+const StoryPageComponent = ({
+  page,
+  overlayDimmed,
+  onToggleOverlay,
+  screenCategory,
+}: {
+  page: StoryPage;
+  overlayDimmed: boolean;
+  onToggleOverlay: () => void;
+  screenCategory: ScreenCategory;
+}) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [_overlayTimeout, _setOverlayTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  const overlayMaxHeight = screenCategory === 'large' ? '40vh' : screenCategory === 'medium' ? '50vh' : '60vh';
+  const overlayPadding = screenCategory === 'large' ? 'p-6 md:p-10' : screenCategory === 'medium' ? 'p-6 md:p-8' : 'p-5';
+  const overlayWidthClass = screenCategory === 'large' ? 'max-w-3xl' : screenCategory === 'medium' ? 'max-w-2xl' : 'max-w-xl';
+  const textSizeClass = screenCategory === 'large' ? 'text-2xl md:text-3xl' : screenCategory === 'medium' ? 'text-2xl' : 'text-xl';
+  const toggleButtonPosition = screenCategory === 'large' ? 'right-20' : 'right-4';
 
   // Get fallback image based on page type
   const getFallbackImage = (): string => {
@@ -140,20 +165,20 @@ const StoryPageComponent = ({ page, overlayDimmed, onToggleOverlay }: { page: St
         style={{ pointerEvents: 'none' }}
       >
         <div
-          className="m-4 mb-8 max-w-3xl w-full bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-6 md:p-10 text-center overflow-y-auto"
+          className={`m-4 mb-8 ${overlayWidthClass} w-full bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl ${overlayPadding} text-center overflow-y-auto`}
           style={{
-            maxHeight: '40vh',
+            maxHeight: overlayMaxHeight,
             fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
             pointerEvents: 'auto',
           }}
         >
-          <p className="text-2xl md:text-3xl font-bold leading-relaxed text-purple-900 storybook-font" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.08)', wordBreak: 'break-word' }} dir="ltr">
+          <p className={`${textSizeClass} font-bold leading-relaxed text-purple-900 storybook-font`} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.08)', wordBreak: 'break-word' }} dir="ltr">
             {getDropCapText(page.storyText)}
           </p>
         </div>
       </motion.div>
       {/* Show/Hide Text Button (top right, next to fullscreen) */}
-      <div className="absolute top-4 right-20 z-20">
+      <div className={`absolute top-4 ${toggleButtonPosition} z-20`}>
         <button
           onClick={onToggleOverlay}
           className="p-3 bg-white/80 backdrop-blur-sm hover:bg-white text-purple-600 rounded-full shadow-lg transition-colors mr-2"
@@ -177,15 +202,25 @@ const StoryPageComponent = ({ page, overlayDimmed, onToggleOverlay }: { page: St
   );
 };
 
-const ChoiceSelection = ({ goodChoice, badChoice, onSelectChoice }: { 
-  goodChoice: StoryPage; 
-  badChoice: StoryPage; 
+const ChoiceSelection = ({
+  goodChoice,
+  badChoice,
+  onSelectChoice,
+  screenCategory,
+}: {
+  goodChoice: StoryPage;
+  badChoice: StoryPage;
   onSelectChoice: (choice: 'good' | 'bad') => void;
+  screenCategory: ScreenCategory;
 }) => {
   const [goodImageError, setGoodImageError] = useState(false);
   const [badImageError, setBadImageError] = useState(false);
   const [goodImageLoading, setGoodImageLoading] = useState(true);
   const [badImageLoading, setBadImageLoading] = useState(true);
+
+  const headingClass = screenCategory === 'large' ? 'text-4xl md:text-5xl' : screenCategory === 'medium' ? 'text-4xl' : 'text-3xl';
+  const choiceTextClass = screenCategory === 'large' ? 'text-2xl md:text-3xl' : screenCategory === 'medium' ? 'text-2xl' : 'text-xl';
+  const gridColumnsClass = screenCategory === 'small' ? 'grid-cols-1' : 'grid-cols-2';
 
   return (
     <motion.div
@@ -198,7 +233,7 @@ const ChoiceSelection = ({ goodChoice, badChoice, onSelectChoice }: {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="text-4xl md:text-5xl font-bold text-center text-purple-800 mb-8"
+        className={`${headingClass} font-bold text-center text-purple-800 mb-8`}
         style={{
           textShadow: '2px 2px 4px rgba(0,0,0,0.1)',
           fontFamily: '"Comic Sans MS", "Comic Sans", cursive'
@@ -207,7 +242,7 @@ const ChoiceSelection = ({ goodChoice, badChoice, onSelectChoice }: {
         What will you choose?
       </motion.h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl w-full">
+      <div className={`grid ${gridColumnsClass} gap-8 max-w-6xl w-full`}>
         <motion.button
           whileHover={{ opacity: 1 }}
           whileTap={{}}
@@ -241,7 +276,7 @@ const ChoiceSelection = ({ goodChoice, badChoice, onSelectChoice }: {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-2xl md:text-3xl font-bold text-green-700 leading-relaxed"
+            className={`${choiceTextClass} font-bold text-green-700 leading-relaxed`}
             style={{
               textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
               fontFamily: '"Comic Sans MS", "Comic Sans", cursive'
@@ -284,7 +319,7 @@ const ChoiceSelection = ({ goodChoice, badChoice, onSelectChoice }: {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-2xl md:text-3xl font-bold text-red-700 leading-relaxed"
+            className={`${choiceTextClass} font-bold text-red-700 leading-relaxed`}
             style={{
               textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
               fontFamily: '"Comic Sans MS", "Comic Sans", cursive'
@@ -298,19 +333,37 @@ const ChoiceSelection = ({ goodChoice, badChoice, onSelectChoice }: {
   );
 };
 
-const StoryEnd = ({ onTryOtherPath, otherChoice, hasReadBothPaths, story }: { 
-  onTryOtherPath: () => void; 
+const StoryEnd = ({
+  onTryOtherPath,
+  otherChoice,
+  hasReadBothPaths,
+  story,
+  screenCategory,
+}: {
+  onTryOtherPath: () => void;
   otherChoice: StoryPage;
   hasReadBothPaths: boolean;
   story: Story;
+  screenCategory: ScreenCategory;
 }) => {
   const isHebrewStory = isHebrew(story.title || story.problemDescription);
+  const containerDirection = screenCategory === 'small' ? 'flex-col' : 'flex-row';
+  const imageSectionClasses = screenCategory === 'small'
+    ? 'w-full p-6 flex items-center justify-center relative bg-gradient-to-br from-white/90 to-yellow-100 rounded-t-2xl'
+    : 'w-1/2 p-6 flex items-center justify-center relative bg-gradient-to-br from-white/90 to-yellow-100 rounded-l-2xl';
+  const contentSectionClasses = screenCategory === 'small'
+    ? 'w-full p-8 flex flex-col items-center justify-center bg-gradient-to-br from-white/90 to-purple-50 rounded-b-2xl'
+    : 'w-1/2 p-8 flex flex-col items-center justify-center bg-gradient-to-br from-white/90 to-purple-50 rounded-r-2xl';
+  const headingClass = screenCategory === 'large' ? 'text-4xl md:text-5xl' : screenCategory === 'medium' ? 'text-4xl' : 'text-3xl';
+  const bodyTextClass = screenCategory === 'large' ? 'text-2xl' : screenCategory === 'medium' ? 'text-2xl' : 'text-xl';
+  const detailTextClass = screenCategory === 'small' ? 'text-lg' : 'text-xl';
+  const buttonTextClass = screenCategory === 'small' ? 'text-xl' : 'text-2xl';
   
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
-      <div className="relative w-full max-w-5xl mx-auto flex flex-row rounded-3xl shadow-2xl bg-gradient-to-br from-yellow-50 to-purple-100 border-8 border-white" style={{ minHeight: '70vh' }}>
+      <div className={`relative w-full max-w-5xl mx-auto flex ${containerDirection} rounded-3xl shadow-2xl bg-gradient-to-br from-yellow-50 to-purple-100 border-8 border-white`} style={{ minHeight: '60vh' }}>
         {/* Left page: Illustration */}
-        <div className="w-1/2 p-6 flex items-center justify-center relative bg-gradient-to-br from-white/90 to-yellow-100 rounded-l-2xl">
+        <div className={imageSectionClasses}>
           <div className="relative w-full aspect-[4/3] flex items-center justify-center">
             <ImageUrl
               src={otherChoice.selectedImageUrl || '/illustrations/STORY_PLACEHOLDER.svg'}
@@ -322,29 +375,31 @@ const StoryEnd = ({ onTryOtherPath, otherChoice, hasReadBothPaths, story }: {
           </div>
         </div>
         {/* Book spine */}
-        <div className="w-2 bg-gradient-to-b from-yellow-300 to-purple-200 shadow-inner rounded-full mx-1" style={{ minHeight: '70vh' }} />
+        {screenCategory !== 'small' && (
+          <div className="w-2 bg-gradient-to-b from-yellow-300 to-purple-200 shadow-inner rounded-full mx-1" style={{ minHeight: '70vh' }} />
+        )}
         {/* Right page: End message and button */}
-        <div className="w-1/2 p-8 flex flex-col items-center justify-center bg-gradient-to-br from-white/90 to-purple-50 rounded-r-2xl">
+        <div className={contentSectionClasses}>
           <div className="max-w-lg w-full text-center flex flex-col items-center justify-center gap-6">
-            <h2 className="text-4xl md:text-5xl font-bold text-purple-800 mb-2" style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive', textShadow: '2px 2px 4px rgba(0,0,0,0.1)' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>
+            <h2 className={`${headingClass} font-bold text-purple-800 mb-2`} style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive', textShadow: '2px 2px 4px rgba(0,0,0,0.1)' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>
               {isHebrewStory ? '!הסוף' : 'The End!'}
             </h2>
             {!hasReadBothPaths ? (
               <>
-                <p className="text-2xl text-purple-600 mb-2" style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>
+                <p className={`${bodyTextClass} text-purple-600 mb-2`} style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>
                   {isHebrewStory ? 'רוצה לנסות את המסלול השני?' : 'Would you like to try the other path?'}
                 </p>
-                <p className="text-xl text-purple-900 mb-4" style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>{otherChoice.storyText}</p>
+                <p className={`${detailTextClass} text-purple-900 mb-4`} style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>{otherChoice.storyText}</p>
                 <button
                   onClick={onTryOtherPath}
-                  className="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-2xl font-bold rounded-full shadow-lg transition-all"
+                  className={`px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white ${buttonTextClass} font-bold rounded-full shadow-lg transition-all`}
                   style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }}
                 >
                   {isHebrewStory ? 'נסה את המסלול השני ←' : 'Try Other Path →'}
                 </button>
               </>
             ) : (
-              <p className="text-2xl text-purple-600" style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>
+              <p className={`${bodyTextClass} text-purple-600`} style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>
                 {isHebrewStory ? '!כל הכבוד על קריאת שני המסלולים 🎉' : 'Great job reading both paths! 🎉'}
               </p>
             )}
@@ -355,11 +410,18 @@ const StoryEnd = ({ onTryOtherPath, otherChoice, hasReadBothPaths, story }: {
   );
 };
 
-const EndOfStorySurvey = ({ goodChoice, badChoice, onSelectFinalChoice, story }: {
+const EndOfStorySurvey = ({
+  goodChoice,
+  badChoice,
+  onSelectFinalChoice,
+  story,
+  screenCategory,
+}: {
   goodChoice: StoryPage;
   badChoice: StoryPage;
   onSelectFinalChoice: (choice: 'good' | 'bad') => void;
   story: Story;
+  screenCategory: ScreenCategory;
 }) => {
   const [goodImageError, setGoodImageError] = useState(false);
   const [badImageError, setBadImageError] = useState(false);
@@ -367,6 +429,9 @@ const EndOfStorySurvey = ({ goodChoice, badChoice, onSelectFinalChoice, story }:
   const [badImageLoading, setBadImageLoading] = useState(true);
   
   const isHebrewStory = isHebrew(story.title || story.problemDescription);
+  const choiceTextClass = screenCategory === 'large' ? 'text-2xl md:text-3xl' : screenCategory === 'medium' ? 'text-2xl' : 'text-xl';
+  const headingClass = screenCategory === 'large' ? 'text-4xl md:text-5xl' : screenCategory === 'medium' ? 'text-4xl' : 'text-3xl';
+  const gridColumnsClass = screenCategory === 'small' ? 'grid-cols-1' : 'grid-cols-2';
 
   return (
     <motion.div
@@ -379,7 +444,7 @@ const EndOfStorySurvey = ({ goodChoice, badChoice, onSelectFinalChoice, story }:
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="text-4xl md:text-5xl font-bold text-center text-purple-800 mb-4"
+        className={`${headingClass} font-bold text-center text-purple-800 mb-4`}
         style={{
           textShadow: '2px 2px 4px rgba(0,0,0,0.1)',
           fontFamily: '"Comic Sans MS", "Comic Sans", cursive'
@@ -393,7 +458,7 @@ const EndOfStorySurvey = ({ goodChoice, badChoice, onSelectFinalChoice, story }:
         {isHebrewStory ? 'קראת את שני המסלולים - עכשיו ספר לנו איזה דרך היית בוחר באמת!' : "You've read both paths - now tell us which one you would actually choose!"}
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl w-full">
+      <div className={`grid ${gridColumnsClass} gap-8 max-w-6xl w-full`}>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -427,7 +492,7 @@ const EndOfStorySurvey = ({ goodChoice, badChoice, onSelectFinalChoice, story }:
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-2xl md:text-3xl font-bold text-green-700 leading-relaxed"
+            className={`${choiceTextClass} font-bold text-green-700 leading-relaxed`}
             style={{
               textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
               fontFamily: '"Comic Sans MS", "Comic Sans", cursive'
@@ -470,7 +535,7 @@ const EndOfStorySurvey = ({ goodChoice, badChoice, onSelectFinalChoice, story }:
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-2xl md:text-3xl font-bold text-red-700 leading-relaxed"
+            className={`${choiceTextClass} font-bold text-red-700 leading-relaxed`}
             style={{
               textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
               fontFamily: '"Comic Sans MS", "Comic Sans", cursive'
@@ -494,11 +559,26 @@ const StoryReader = ({
   readPaths,
   showSurvey,
   onSelectFinalChoice,
-  surveyCompleted
+  surveyCompleted,
+  screenCategory,
 }: StoryReaderProps) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [overlayDimmed, setOverlayDimmed] = useState(false);
   const [pageDirection, setPageDirection] = useState<'next' | 'prev'>('next');
+
+  const navButtonBaseClasses = screenCategory === 'large'
+    ? 'w-16 h-16 border-4'
+    : screenCategory === 'medium'
+      ? 'w-14 h-14 border-[3px]'
+      : 'w-12 h-12 border-2';
+  const navIconSizeClass = screenCategory === 'large'
+    ? 'h-8 w-8'
+    : screenCategory === 'medium'
+      ? 'h-7 w-7'
+      : 'h-6 w-6';
+  const leftPositionClass = screenCategory === 'large' ? 'left-6' : screenCategory === 'medium' ? 'left-5' : 'left-3';
+  const rightPositionClass = screenCategory === 'large' ? 'right-6' : screenCategory === 'medium' ? 'right-5' : 'right-3';
+  const readerPaddingClass = screenCategory === 'large' ? 'px-12 py-8' : screenCategory === 'medium' ? 'px-8 py-6' : 'px-4 py-4';
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -574,7 +654,7 @@ const StoryReader = ({
   return (
     <div className="fixed inset-0 w-screen h-screen bg-gradient-to-b from-purple-100 to-yellow-100 overflow-hidden flex flex-col items-center justify-center z-50">
       {/* Book spread content or full-image content */}
-      <div className="flex-1 w-full flex flex-col items-center justify-center" style={{ perspective: 2000 }}>
+      <div className={`flex-1 w-full flex flex-col items-center justify-center ${readerPaddingClass}`} style={{ perspective: 2000 }}>
         <AnimatePresence mode="wait" initial={false}>
           {showSurvey ? (
             <EndOfStorySurvey
@@ -583,6 +663,7 @@ const StoryReader = ({
               badChoice={badChoice!}
               onSelectFinalChoice={onSelectFinalChoice}
               story={story}
+              screenCategory={screenCategory}
             />
           ) : surveyCompleted ? (
             <motion.div
@@ -644,6 +725,7 @@ const StoryReader = ({
               goodChoice={goodChoice!} 
               badChoice={badChoice!} 
               onSelectChoice={onSelectChoice}
+              screenCategory={screenCategory}
             />
           ) : isEndOfPath() ? (
             <StoryEnd 
@@ -652,6 +734,7 @@ const StoryReader = ({
               otherChoice={selectedChoice === 'good' ? badChoice! : goodChoice!}
               hasReadBothPaths={readPaths.size === 2}
               story={story}
+              screenCategory={screenCategory}
             />
           ) : currentPageData && (
             <motion.div
@@ -675,7 +758,7 @@ const StoryReader = ({
               className="w-full h-full"
               style={{ willChange: 'transform' }}
             >
-              <StoryPageComponent page={currentPageData} overlayDimmed={overlayDimmed} onToggleOverlay={handleToggleOverlay} />
+              <StoryPageComponent page={currentPageData} overlayDimmed={overlayDimmed} onToggleOverlay={handleToggleOverlay} screenCategory={screenCategory} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -688,11 +771,11 @@ const StoryReader = ({
               whileHover={{ opacity: 1 }}
               whileTap={{}}
               onClick={handlePreviousPage}
-              className="fixed left-4 top-1/2 -translate-y-1/2 z-30 w-16 h-16 flex items-center justify-center rounded-full bg-white shadow-xl border-4 border-yellow-300 transition-all opacity-50 hover:opacity-90 focus:opacity-90 active:opacity-90"
+              className={`fixed ${leftPositionClass} top-1/2 -translate-y-1/2 z-30 flex items-center justify-center rounded-full bg-white shadow-xl border-yellow-300 transition-all opacity-50 hover:opacity-90 focus:opacity-90 active:opacity-90 ${navButtonBaseClasses}`}
               style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }}
               aria-label="Previous Page"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <svg xmlns="http://www.w3.org/2000/svg" className={`${navIconSizeClass} text-purple-600`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </motion.button>
@@ -701,11 +784,11 @@ const StoryReader = ({
             whileHover={{ opacity: 1 }}
             whileTap={{}}
             onClick={handleNextPage}
-            className="fixed right-4 top-1/2 -translate-y-1/2 z-30 w-16 h-16 flex items-center justify-center rounded-full bg-white shadow-xl border-4 border-yellow-300 transition-all opacity-50 hover:opacity-90 focus:opacity-90 active:opacity-90"
+            className={`fixed ${rightPositionClass} top-1/2 -translate-y-1/2 z-30 flex items-center justify-center rounded-full bg-white shadow-xl border-yellow-300 transition-all opacity-50 hover:opacity-90 focus:opacity-90 active:opacity-90 ${navButtonBaseClasses}`}
             style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }}
             aria-label="Next Page"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <svg xmlns="http://www.w3.org/2000/svg" className={`${navIconSizeClass} text-purple-600`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </motion.button>
@@ -736,7 +819,6 @@ const StoryReader = ({
 
 export default function StoryReaderPage() {
   const { storyId } = useParams();
-  const router = useRouter();
   const [story, setStory] = useState<Story | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -745,6 +827,11 @@ export default function StoryReaderPage() {
   const [readPaths, setReadPaths] = useState<Set<'good' | 'bad'>>(new Set());
   const [showSurvey, setShowSurvey] = useState(false);
   const [surveyCompleted, setSurveyCompleted] = useState(false);
+  const [screenCategory, setScreenCategory] = useState<ScreenCategory>('large');
+  const [orientationBlocked, setOrientationBlocked] = useState(false);
+
+  const shouldForceLandscape = screenCategory !== 'large';
+  const showOrientationOverlay = shouldForceLandscape && orientationBlocked;
 
   // Reset all state when storyId changes (e.g., browser back button)
   useEffect(() => {
@@ -804,6 +891,48 @@ export default function StoryReaderPage() {
       }
     });
   }, [story]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const orientationMedia = window.matchMedia('(orientation: portrait)');
+
+    const applyLayoutSizing = () => {
+      const category = getScreenCategory(window.innerWidth);
+      setScreenCategory(category);
+
+      if (category === 'large') {
+        setOrientationBlocked(false);
+        return;
+      }
+
+      const isPortrait = orientationMedia.matches;
+      setOrientationBlocked(isPortrait);
+
+      const screenOrientation = (window.screen as Screen & { orientation?: ScreenOrientation }).orientation;
+      if (screenOrientation && typeof screenOrientation.lock === 'function') {
+        screenOrientation.lock('landscape').catch(() => {});
+      }
+    };
+
+    applyLayoutSizing();
+
+    window.addEventListener('resize', applyLayoutSizing);
+    if (orientationMedia.addEventListener) {
+      orientationMedia.addEventListener('change', applyLayoutSizing);
+    } else if (orientationMedia.addListener) {
+      orientationMedia.addListener(applyLayoutSizing);
+    }
+
+    return () => {
+      window.removeEventListener('resize', applyLayoutSizing);
+      if (orientationMedia.removeEventListener) {
+        orientationMedia.removeEventListener('change', applyLayoutSizing);
+      } else if (orientationMedia.removeListener) {
+        orientationMedia.removeListener(applyLayoutSizing);
+      }
+    };
+  }, []);
 
   const handleNextPage = () => {
     if (!story) return;
@@ -895,8 +1024,8 @@ export default function StoryReaderPage() {
   if (!story) return <ErrorMessage message="Story not found" />;
 
   return (
-    <div className="min-h-screen flex flex-col justify-between items-center bg-gradient-to-b from-blue-50 to-purple-50 p-2 sm:p-4">
-      <div className="w-full max-w-xl flex flex-col flex-1 justify-between h-[90vh]">
+    <div className="relative min-h-screen flex flex-col justify-between items-center bg-gradient-to-b from-blue-50 to-purple-50 p-2 sm:p-4">
+      <div className="w-full flex flex-col flex-1 justify-between h-[90vh]">
         <StoryReader
           story={story}
           currentPage={currentPage}
@@ -909,8 +1038,32 @@ export default function StoryReaderPage() {
           showSurvey={showSurvey}
           onSelectFinalChoice={handleSelectFinalChoice}
           surveyCompleted={surveyCompleted}
+          screenCategory={screenCategory}
         />
       </div>
+
+      {showOrientationOverlay && (
+        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-purple-900/90 via-indigo-900/90 to-purple-800/90 text-white text-center px-6">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            className="h-16 w-16 text-white"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <rect x="5" y="4" width="14" height="16" rx="2" ry="2" />
+            <path d="M4 7.5V5a1 1 0 0 1 1-1h2.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M20 16.5V19a1 1 0 0 1-1 1h-2.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M3 12a9 9 0 0 1 9-9" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M21 12a9 9 0 0 1-9 9" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <h2 className="text-3xl font-bold">Rotate your device</h2>
+          <p className="text-lg text-white/90 max-w-md">
+            For the best reading experience, please rotate your device to landscape. This helps us keep the story immersive on smaller screens.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

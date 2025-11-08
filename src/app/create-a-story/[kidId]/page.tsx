@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useReducer, useEffect } from "react";
+import React, { useReducer, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from '@/app/context/AuthContext';
 import { useTranslation } from "@/app/hooks/useTranslation";
 import { Loader2 } from "lucide-react";
+import { X } from "lucide-react";
 // import ImageUrl from "@/app/components/common/ImageUrl"; // Unused - image generation disabled
 
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 import { useStoryGenerationWorkflow } from "../hooks/useStoryGenerationWorkflow";
 import { useKidStoryLoader } from "../hooks/useKidStoryLoader";
@@ -35,6 +37,11 @@ export default function CreateAStoryPage() {
   const kidId = params.kidId as string;
   const { t } = useTranslation();
   const { currentUser, loading: authLoading } = useAuth();
+
+  const [advantagesInput, setAdvantagesInput] = useState("");
+  const [disadvantagesInput, setDisadvantagesInput] = useState("");
+  const [advantagesList, setAdvantagesList] = useState<string[]>([]);
+  const [disadvantagesList, setDisadvantagesList] = useState<string[]>([]);
 
   // Load kid details
   const { kid: kidDetails, loading: kidLoading, error: kidError } = useKidStoryLoader(kidId);
@@ -79,6 +86,76 @@ export default function CreateAStoryPage() {
       })));
     }
   }, [state.pages]);
+
+  useEffect(() => {
+    const parseList = (value: string) => {
+      if (!value) return [] as string[];
+      const trimmed = value.trim();
+      if (!trimmed) return [] as string[];
+
+      const withoutBrackets = trimmed.replace(/^\[/, "").replace(/\]$/, "");
+      if (!withoutBrackets) return [] as string[];
+
+      return withoutBrackets
+        .split(",")
+        .map(item => item.trim().replace(/^"|"$/g, ""))
+        .filter(Boolean);
+    };
+
+    const parsedAdvantages = parseList(state.advantages);
+    const parsedDisadvantages = parseList(state.disadvantages);
+
+    setAdvantagesList(parsedAdvantages);
+    setDisadvantagesList(parsedDisadvantages);
+  }, [state.advantages, state.disadvantages]);
+
+  const formatList = (items: string[]) => `[${items.join(", ")}]`;
+
+  const handleAddAdvantage = () => {
+    const value = advantagesInput.trim();
+    if (!value) return;
+
+    const updated = [...advantagesList, value];
+    setAdvantagesList(updated);
+    dispatch({ type: 'SET_ADVANTAGES', payload: formatList(updated) });
+    setAdvantagesInput("");
+  };
+
+  const handleRemoveAdvantage = (index: number) => {
+    const updated = advantagesList.filter((_, i) => i !== index);
+    setAdvantagesList(updated);
+    dispatch({ type: 'SET_ADVANTAGES', payload: formatList(updated) });
+  };
+
+  const handleAddDisadvantage = () => {
+    const value = disadvantagesInput.trim();
+    if (!value) return;
+
+    const updated = [...disadvantagesList, value];
+    setDisadvantagesList(updated);
+    dispatch({ type: 'SET_DISADVANTAGES', payload: formatList(updated) });
+    setDisadvantagesInput("");
+  };
+
+  const handleRemoveDisadvantage = (index: number) => {
+    const updated = disadvantagesList.filter((_, i) => i !== index);
+    setDisadvantagesList(updated);
+    dispatch({ type: 'SET_DISADVANTAGES', payload: formatList(updated) });
+  };
+
+  const handleAdvantageKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleAddAdvantage();
+    }
+  };
+
+  const handleDisadvantageKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleAddDisadvantage();
+    }
+  };
 
   // Authentication check
   useEffect(() => {
@@ -259,21 +336,67 @@ export default function CreateAStoryPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="advantages">Advantages (Optional)</Label>
-              <Textarea
-                id="advantages"
-                placeholder="e.g., Kid will feel calm and happy"
-                  value={state.advantages}
-                  onChange={(e) => dispatch({ type: 'SET_ADVANTAGES', payload: e.target.value })}
-              />
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {advantagesList.map((advantage, index) => (
+                    <Badge key={`${advantage}-${index}`} variant="secondary" className="flex items-center gap-1">
+                      <span>{advantage}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveAdvantage(index)}
+                        className="ml-1 rounded-full p-0.5 hover:bg-secondary/80"
+                        aria-label={`Remove advantage ${advantage}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="advantages"
+                    placeholder="e.g., Kid will feel calm and happy"
+                    value={advantagesInput}
+                    onChange={(e) => setAdvantagesInput(e.target.value)}
+                    onKeyDown={handleAdvantageKeyDown}
+                  />
+                  <Button type="button" onClick={handleAddAdvantage} variant="secondary">
+                    Add
+                  </Button>
+                </div>
+              </div>
             </div>
             <div>
               <Label htmlFor="disadvantages">Disadvantages (Optional)</Label>
-              <Textarea
-                id="disadvantages"
-                placeholder="e.g., Kid will feel anxious"
-                  value={state.disadvantages}
-                  onChange={(e) => dispatch({ type: 'SET_DISADVANTAGES', payload: e.target.value })}
-              />
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {disadvantagesList.map((disadvantage, index) => (
+                    <Badge key={`${disadvantage}-${index}`} variant="secondary" className="flex items-center gap-1">
+                      <span>{disadvantage}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDisadvantage(index)}
+                        className="ml-1 rounded-full p-0.5 hover:bg-secondary/80"
+                        aria-label={`Remove disadvantage ${disadvantage}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="disadvantages"
+                    placeholder="e.g., Kid will feel anxious"
+                    value={disadvantagesInput}
+                    onChange={(e) => setDisadvantagesInput(e.target.value)}
+                    onKeyDown={handleDisadvantageKeyDown}
+                  />
+                  <Button type="button" onClick={handleAddDisadvantage} variant="secondary">
+                    Add
+                  </Button>
+                </div>
+              </div>
               </div>
             </div>
           </div>

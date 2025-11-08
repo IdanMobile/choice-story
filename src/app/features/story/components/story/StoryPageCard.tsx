@@ -2,7 +2,7 @@
 
 import ImageUrl from '@/app/components/common/ImageUrl';
 import { PageType, StoryPage, Story, KidDetails } from '@/models';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { PageOperationsService } from '@/app/services/page-operations.service';
 import { useAuth } from '@/app/context/AuthContext';
 import { useTranslation } from '@/app/hooks/useTranslation';
@@ -17,19 +17,27 @@ type StoryPageCardProps = {
   page: StoryPage;
   story: Story;
   kid: KidDetails | null;
-  onPageUpdate?: (updatedPage: StoryPage) => void;
+  onPageUpdate?: (updatedPage: StoryPage, options?: { skipPersist?: boolean }) => void;
   useAIBots?: boolean; // Flag to control whether to use new AI bot system
   textOnly?: boolean; // Flag to show only text without image generation options
 };
 
-export const StoryPageCard = ({ 
-  page: initialPage,
-  story,
-  kid,
-  onPageUpdate,
-  useAIBots = false,
-  textOnly = false
-}: StoryPageCardProps) => {
+export type StoryPageCardHandle = {
+  triggerGenerateImage: () => void;
+  hasImage: () => boolean;
+};
+
+export const StoryPageCard = forwardRef<StoryPageCardHandle, StoryPageCardProps>(function StoryPageCard(
+  { 
+    page: initialPage,
+    story,
+    kid,
+    onPageUpdate,
+    useAIBots = false,
+    textOnly = false
+  }: StoryPageCardProps,
+  ref
+) {
   const [page, setPage] = useState(initialPage);
   const [isRegeneratingText, setIsRegeneratingText] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -91,7 +99,7 @@ export const StoryPageCard = ({
     console.log('[StoryPageCard] Image selected:', imageUrl);
     const updatedPage = { ...page, selectedImageUrl: imageUrl };
     setPage(updatedPage);
-    onPageUpdate?.(updatedPage);
+    onPageUpdate?.(updatedPage, { skipPersist: true });
     setIsGeneratingImage(false);
     setShowGeneratedImages(false);
   };
@@ -146,6 +154,20 @@ export const StoryPageCard = ({
     setPage(initialPage);
     setEditedText(initialPage.storyText);
   }, [initialPage]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      triggerGenerateImage: () => {
+        if (!currentUser || !kid) {
+          return;
+        }
+        setShowGeneratedImages(true);
+      },
+      hasImage: () => Boolean(page.selectedImageUrl),
+    }),
+    [currentUser, kid, page.selectedImageUrl]
+  );
 
   return (
     <Card className="overflow-hidden">
@@ -313,4 +335,4 @@ export const StoryPageCard = ({
       </CardContent>
     </Card>
   );
-}; 
+});

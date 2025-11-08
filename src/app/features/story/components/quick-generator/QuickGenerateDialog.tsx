@@ -16,6 +16,8 @@ import { useTranslation } from '@/app/hooks/useTranslation';
 import functionClientAPI from '@/app/network/functions/FunctionClientAPI';
 import { StoryApi } from '@/app/network';
 import { getFirebaseEnvironment } from '@/config/build-config';
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 
 interface QuickGenerateDialogProps {
   kidDetails: KidDetails;
@@ -33,10 +35,41 @@ export const QuickGenerateDialog: FC<QuickGenerateDialogProps> = ({
   onGeneratingChange,
 }) => {
   const [problem, setProblem] = useState('');
-  const [advantages, setAdvantages] = useState('');
-  const [disadvantages, setDisadvantages] = useState('');
+  const [advantagesInput, setAdvantagesInput] = useState('');
+  const [disadvantagesInput, setDisadvantagesInput] = useState('');
+  const [advantagesList, setAdvantagesList] = useState<string[]>([]);
+  const [disadvantagesList, setDisadvantagesList] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useTranslation();
+
+  const formatList = (items: string[]) => {
+    if (!items.length) return '';
+    return `[${items.join(', ')}]`;
+  };
+
+  const handleAddAdvantage = () => {
+    const value = advantagesInput.trim();
+    if (!value) return;
+
+    setAdvantagesList(prev => [...prev, value]);
+    setAdvantagesInput('');
+  };
+
+  const handleRemoveAdvantage = (index: number) => {
+    setAdvantagesList(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddDisadvantage = () => {
+    const value = disadvantagesInput.trim();
+    if (!value) return;
+
+    setDisadvantagesList(prev => [...prev, value]);
+    setDisadvantagesInput('');
+  };
+
+  const handleRemoveDisadvantage = (index: number) => {
+    setDisadvantagesList(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async () => {
     if (!problem.trim()) {
@@ -59,12 +92,15 @@ export const QuickGenerateDialog: FC<QuickGenerateDialogProps> = ({
     });
 
     try {
+      const formattedAdvantages = formatList(advantagesList);
+      const formattedDisadvantages = formatList(disadvantagesList);
+
       console.log("[QuickGenerateDialog] Calling generateFullStory with:", {
         userId: currentUser.uid,
         kidId: kidDetails.id,
         problemDescription: problem,
-        advantages,
-        disadvantages
+        advantages: formattedAdvantages,
+        disadvantages: formattedDisadvantages
       });
 
       // Get environment explicitly
@@ -75,8 +111,8 @@ export const QuickGenerateDialog: FC<QuickGenerateDialogProps> = ({
         userId: currentUser.uid,
         kidId: kidDetails.id,
         problemDescription: problem,
-        advantages: advantages || undefined,
-        disadvantages: disadvantages || undefined,
+        advantages: formattedAdvantages || undefined,
+        disadvantages: formattedDisadvantages || undefined,
         environment
       });
 
@@ -98,8 +134,10 @@ export const QuickGenerateDialog: FC<QuickGenerateDialogProps> = ({
       
       // Reset the inputs after generation completes
       setProblem('');
-      setAdvantages('');
-      setDisadvantages('');
+      setAdvantagesInput('');
+      setDisadvantagesInput('');
+      setAdvantagesList([]);
+      setDisadvantagesList([]);
 
       // Mark as no longer generating
       onGeneratingChange(false);
@@ -146,21 +184,77 @@ export const QuickGenerateDialog: FC<QuickGenerateDialogProps> = ({
             </div>
             <div className="space-y-2">
               <Label htmlFor="advantages">{t.quickGenerateDialog.advantagesLabel}</Label>
-              <Input
-                id="advantages"
-                placeholder={t.quickGenerateDialog.advantagesPlaceholder}
-                value={advantages}
-                onChange={(e) => setAdvantages(e.target.value)}
-              />
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {advantagesList.map((advantage, index) => (
+                  <Badge key={`${advantage}-${index}`} variant="secondary" className="flex items-center gap-1">
+                    <span>{advantage}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAdvantage(index)}
+                      className="ml-1 rounded-full p-0.5 hover:bg-secondary/80"
+                      aria-label={`Remove advantage ${advantage}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="advantages"
+                  placeholder={t.quickGenerateDialog.advantagesPlaceholder}
+                  value={advantagesInput}
+                  onChange={(e) => setAdvantagesInput(e.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      handleAddAdvantage();
+                    }
+                  }}
+                />
+                <Button type="button" variant="secondary" onClick={handleAddAdvantage} disabled={!advantagesInput.trim()}>
+                  {t.quickGenerateDialog.add || 'Add'}
+                </Button>
+              </div>
+            </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="disadvantages">{t.quickGenerateDialog.disadvantagesLabel}</Label>
-              <Input
-                id="disadvantages"
-                placeholder={t.quickGenerateDialog.disadvantagesPlaceholder}
-                value={disadvantages}
-                onChange={(e) => setDisadvantages(e.target.value)}
-              />
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {disadvantagesList.map((disadvantage, index) => (
+                  <Badge key={`${disadvantage}-${index}`} variant="secondary" className="flex items-center gap-1">
+                    <span>{disadvantage}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDisadvantage(index)}
+                      className="ml-1 rounded-full p-0.5 hover:bg-secondary/80"
+                      aria-label={`Remove disadvantage ${disadvantage}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="disadvantages"
+                  placeholder={t.quickGenerateDialog.disadvantagesPlaceholder}
+                  value={disadvantagesInput}
+                  onChange={(e) => setDisadvantagesInput(e.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      handleAddDisadvantage();
+                    }
+                  }}
+                />
+                <Button type="button" variant="secondary" onClick={handleAddDisadvantage} disabled={!disadvantagesInput.trim()}>
+                  {t.quickGenerateDialog.add || 'Add'}
+                </Button>
+              </div>
+            </div>
             </div>
             <Button
               className="w-full"
