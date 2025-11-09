@@ -1,20 +1,19 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import ImageUrl from '@/app/components/common/ImageUrl';
-import { Story, StoryPage, PageType } from '@/models';
-import { motion, AnimatePresence } from 'framer-motion';
-import { StoryApi } from '@/app/network/StoryApi';
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import ImageUrl from "@/app/components/common/ImageUrl";
+import { Story, StoryPage, PageType } from "@/models";
+import { motion, AnimatePresence } from "framer-motion";
+import { StoryApi } from "@/app/network/StoryApi";
 
-type ScreenCategory = 'small' | 'medium' | 'large';
+type ScreenCategory = "small" | "medium" | "large";
 
 const getScreenCategory = (width: number): ScreenCategory => {
-  if (width < 768) return 'small';
-  if (width < 1280) return 'medium';
-  return 'large';
+  if (width < 768) return "small";
+  if (width < 1280) return "medium";
+  return "large";
 };
-
 
 // Types
 interface StoryReaderProps {
@@ -23,11 +22,11 @@ interface StoryReaderProps {
   onNextPage: () => void;
   onPreviousPage: () => void;
   onFinish: () => void;
-  onSelectChoice: (choice: 'good' | 'bad') => void;
-  selectedChoice?: 'good' | 'bad';
-  readPaths: Set<'good' | 'bad'>;
+  onSelectChoice: (choice: "good" | "bad") => void;
+  selectedChoice?: "good" | "bad";
+  readPaths: Set<"good" | "bad">;
   showSurvey: boolean;
-  onSelectFinalChoice: (choice: 'good' | 'bad') => void;
+  onSelectFinalChoice: (choice: "good" | "bad") => void;
   surveyCompleted: boolean;
   screenCategory: ScreenCategory;
 }
@@ -41,21 +40,25 @@ const isHebrew = (text: string): boolean => {
 // Components
 const LoadingStory = () => (
   <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-purple-50">
-    <motion.div 
+    <motion.div
       className="mb-6"
       animate={{ rotateZ: [0, 360] }}
       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
     >
       <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full"></div>
     </motion.div>
-    <h2 className="text-2xl font-bold text-purple-700">Loading your story...</h2>
+    <h2 className="text-2xl font-bold text-purple-700">
+      Loading your story...
+    </h2>
   </div>
 );
 
 const ErrorMessage = ({ message }: { message: string }) => (
   <div className="container h-screen flex items-center justify-center mx-auto px-4 py-8 bg-gradient-to-b from-blue-50 to-purple-50">
     <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center max-w-xl w-full">
-      <h2 className="text-2xl font-bold text-red-700 mb-2">Oops! Something went wrong</h2>
+      <h2 className="text-2xl font-bold text-red-700 mb-2">
+        Oops! Something went wrong
+      </h2>
       <p className="text-red-700">{message}</p>
     </div>
   </div>
@@ -74,31 +77,54 @@ const StoryPageComponent = ({
 }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
-  const [_overlayTimeout, _setOverlayTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [_overlayTimeout, _setOverlayTimeout] = useState<NodeJS.Timeout | null>(
+    null
+  );
 
-  const overlayMaxHeight = screenCategory === 'large' ? '40vh' : screenCategory === 'medium' ? '50vh' : '60vh';
-  const overlayPadding = screenCategory === 'large' ? 'p-6 md:p-10' : screenCategory === 'medium' ? 'p-6 md:p-8' : 'p-5';
-  const overlayWidthClass = screenCategory === 'large' ? 'max-w-5xl' : screenCategory === 'medium' ? 'max-w-4xl' : 'max-w-2xl';
-  const textSizeClass = screenCategory === 'large' ? 'text-2xl md:text-3xl' : screenCategory === 'medium' ? 'text-2xl' : 'text-xl';
-  const toggleButtonPosition = screenCategory === 'large' ? 'right-20' : 'right-4';
+  const overlayMaxHeight =
+    screenCategory === "large"
+      ? "40vh"
+      : screenCategory === "medium"
+      ? "50vh"
+      : "60vh";
+  const overlayPadding =
+    screenCategory === "large"
+      ? "p-6 md:p-10"
+      : screenCategory === "medium"
+      ? "p-6 md:p-8"
+      : "p-5";
+  const overlayWidthClass =
+    screenCategory === "large"
+      ? "max-w-5xl"
+      : screenCategory === "medium"
+      ? "max-w-4xl"
+      : "max-w-2xl";
+  const textSizeClass =
+    screenCategory === "large"
+      ? "text-2xl md:text-3xl"
+      : screenCategory === "medium"
+      ? "text-2xl"
+      : "text-xl";
+  const toggleButtonPosition =
+    screenCategory === "large" ? "right-20" : "right-4";
 
   // Get fallback image based on page type
   const getFallbackImage = (): string => {
     switch (page.pageType) {
       case PageType.COVER:
-        return '/illustrations/STORY_COVER.svg';
+        return "/illustrations/STORY_COVER.svg";
       case PageType.NORMAL:
-        return '/illustrations/STORY_NORMAL_PAGE.svg';
+        return "/illustrations/STORY_NORMAL_PAGE.svg";
       case PageType.GOOD_CHOICE:
-        return '/illustrations/STORY_GOOD_CHOICE.svg';
+        return "/illustrations/STORY_GOOD_CHOICE.svg";
       case PageType.BAD_CHOICE:
-        return '/illustrations/STORY_BAD_CHOICE.svg';
+        return "/illustrations/STORY_BAD_CHOICE.svg";
       case PageType.GOOD:
-        return '/illustrations/STORY_GOOD_PAGE.svg';
+        return "/illustrations/STORY_GOOD_PAGE.svg";
       case PageType.BAD:
-        return '/illustrations/STORY_BAD_PAGE.svg';
+        return "/illustrations/STORY_BAD_PAGE.svg";
       default:
-        return '/illustrations/STORY_PLACEHOLDER.svg';
+        return "/illustrations/STORY_PLACEHOLDER.svg";
     }
   };
 
@@ -110,11 +136,15 @@ const StoryPageComponent = ({
     if (!match) return text; // fallback: no letter found
     const firstLetterIdx = match.index ?? 0;
     return (
-      <span style={{ fontFamily: 'inherit' }}>
+      <span style={{ fontFamily: "inherit" }}>
         {text.slice(0, firstLetterIdx)}
         <span
           className="text-purple-500 text-5xl md:text-6xl font-extrabold drop-shadow-lg leading-none align-baseline mr-2"
-          style={{ fontFamily: 'inherit', lineHeight: '1', verticalAlign: 'baseline' }}
+          style={{
+            fontFamily: "inherit",
+            lineHeight: "1",
+            verticalAlign: "baseline",
+          }}
         >
           {text[firstLetterIdx]}
         </span>
@@ -123,26 +153,27 @@ const StoryPageComponent = ({
     );
   };
 
-
-    const getWhiteShadowText = (text: string) => {
-      if (!text) return null;
-      return (
-        <span style={{
-          fontFamily: 'inherit',
-          color: 'white',
-          fontSize: '1.3em',
-          textShadow: '2px 2px 4px rgba(0,0,0,0.7), 0 0 5px rgba(0,0,0,0.5)',
-        }}>
-          {text}
-        </span>
-      );
-    };
+  const getWhiteShadowText = (text: string) => {
+    if (!text) return null;
+    return (
+      <span
+        style={{
+          fontFamily: "inherit",
+          color: "white",
+          fontSize: "1.3em",
+          textShadow: "2px 2px 4px rgba(0,0,0,0.7), 0 0 5px rgba(0,0,0,0.5)",
+        }}
+      >
+        {text}
+      </span>
+    );
+  };
 
   return (
     <div
       className="relative w-full h-full min-h-screen min-w-screen overflow-hidden select-none"
       tabIndex={0}
-      style={{ touchAction: 'manipulation' }}
+      style={{ touchAction: "manipulation" }}
     >
       {/* Full-page image background */}
       <div className="absolute inset-0 w-full h-full z-0">
@@ -150,16 +181,22 @@ const StoryPageComponent = ({
           <div className="absolute inset-0 bg-gradient-to-br from-purple-100 to-blue-100 animate-pulse flex items-center justify-center">
             <motion.div
               animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
               className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full"
             />
           </div>
         )}
         <ImageUrl
-          src={imageError || !page.selectedImageUrl ? getFallbackImage() : page.selectedImageUrl}
+          src={
+            imageError || !page.selectedImageUrl
+              ? getFallbackImage()
+              : page.selectedImageUrl
+          }
           alt={`Illustration for page ${page.pageNum}`}
           fill
-          className={`object-contain transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'} rounded-3xl m-2`}
+          className={`object-contain transition-opacity duration-300 ${
+            imageLoading ? "opacity-0" : "opacity-100"
+          } rounded-3xl m-2`}
           sizes="100vw"
           priority
           onError={() => {
@@ -176,17 +213,24 @@ const StoryPageComponent = ({
         animate={{ opacity: overlayDimmed ? 0.01 : 0.98 }}
         transition={{ duration: 0.3 }}
         className="absolute left-0 right-0 bottom-0 z-10 flex justify-center"
-        style={{ pointerEvents: 'none' }}
+        style={{ pointerEvents: "none" }}
       >
         <div
           className={`m-4 ${overlayWidthClass} w-full backdrop-blur-md rounded-3xl ${overlayPadding} text-center overflow-y-auto`}
           style={{
             maxHeight: overlayMaxHeight,
             fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
-            pointerEvents: 'auto',
+            pointerEvents: "auto",
           }}
         >
-          <p className={`${textSizeClass} font-bold leading-relaxed text-purple-900 storybook-font`} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.08)', wordBreak: 'break-word' }} dir="ltr">
+          <p
+            className={`${textSizeClass} font-bold leading-relaxed text-purple-900 storybook-font`}
+            style={{
+              textShadow: "2px 2px 4px rgba(0,0,0,0.08)",
+              wordBreak: "break-word",
+            }}
+            dir="ltr"
+          >
             {getWhiteShadowText(page.storyText)}
           </p>
         </div>
@@ -225,7 +269,7 @@ const ChoiceSelection = ({
 }: {
   goodChoice: StoryPage;
   badChoice: StoryPage;
-  onSelectChoice: (choice: 'good' | 'bad') => void;
+  onSelectChoice: (choice: "good" | "bad") => void;
   screenCategory: ScreenCategory;
 }) => {
   const [goodImageError, setGoodImageError] = useState(false);
@@ -233,9 +277,20 @@ const ChoiceSelection = ({
   const [goodImageLoading, setGoodImageLoading] = useState(true);
   const [badImageLoading, setBadImageLoading] = useState(true);
 
-  const headingClass = screenCategory === 'large' ? 'text-4xl md:text-5xl' : screenCategory === 'medium' ? 'text-4xl' : 'text-3xl';
-  const choiceTextClass = screenCategory === 'large' ? 'text-2xl md:text-3xl' : screenCategory === 'medium' ? 'text-2xl' : 'text-xl';
-  const gridColumnsClass = screenCategory === 'small' ? 'grid-cols-1' : 'grid-cols-2';
+  const headingClass =
+    screenCategory === "large"
+      ? "text-4xl md:text-5xl"
+      : screenCategory === "medium"
+      ? "text-4xl"
+      : "text-3xl";
+  const choiceTextClass =
+    screenCategory === "large"
+      ? "text-2xl md:text-3xl"
+      : screenCategory === "medium"
+      ? "text-2xl"
+      : "text-xl";
+  const gridColumnsClass =
+    screenCategory === "small" ? "grid-cols-1" : "grid-cols-2";
 
   return (
     <motion.div
@@ -244,14 +299,14 @@ const ChoiceSelection = ({
       exit={{ opacity: 0, y: -20 }}
       className="w-full h-full flex flex-col items-center justify-center p-6"
     >
-      <motion.h2 
+      <motion.h2
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.2 }}
         className={`${headingClass} font-bold text-center text-purple-800 mb-8`}
         style={{
-          textShadow: '2px 2px 4px rgba(0,0,0,0.1)',
-          fontFamily: '"Comic Sans MS", "Comic Sans", cursive'
+          textShadow: "2px 2px 4px rgba(0,0,0,0.1)",
+          fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
         }}
       >
         מה הבחירה שלך?
@@ -261,7 +316,7 @@ const ChoiceSelection = ({
         <motion.button
           whileHover={{ opacity: 1 }}
           whileTap={{}}
-          onClick={() => onSelectChoice('good')}
+          onClick={() => onSelectChoice("good")}
           className="bg-gradient-to-br from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-3xl p-6 text-left transition-all shadow-xl hover:shadow-2xl"
         >
           <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-6">
@@ -275,10 +330,16 @@ const ChoiceSelection = ({
               </div>
             )}
             <ImageUrl
-              src={goodImageError || !goodChoice.selectedImageUrl ? '/illustrations/STORY_GOOD_CHOICE.svg' : goodChoice.selectedImageUrl}
+              src={
+                goodImageError || !goodChoice.selectedImageUrl
+                  ? "/illustrations/STORY_GOOD_CHOICE.svg"
+                  : goodChoice.selectedImageUrl
+              }
               alt="Good choice"
               fill
-              className={`object-cover transition-opacity duration-300 ${goodImageLoading ? 'opacity-0' : 'opacity-100'} rounded-3xl m-2`}
+              className={`object-cover transition-opacity duration-300 ${
+                goodImageLoading ? "opacity-0" : "opacity-100"
+              } rounded-3xl m-2`}
               sizes="(max-width: 768px) 100vw, 50vw"
               onError={() => {
                 setGoodImageError(true);
@@ -287,15 +348,15 @@ const ChoiceSelection = ({
               onLoad={() => setGoodImageLoading(false)}
             />
           </div>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             className={`${choiceTextClass} font-bold text-green-700 leading-relaxed`}
             style={{
-              textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
+              textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
               fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
-              textAlign: 'right',
+              textAlign: "right",
             }}
           >
             {goodChoice.storyText}
@@ -305,7 +366,7 @@ const ChoiceSelection = ({
         <motion.button
           whileHover={{ opacity: 1 }}
           whileTap={{}}
-          onClick={() => onSelectChoice('bad')}
+          onClick={() => onSelectChoice("bad")}
           className="bg-gradient-to-br from-red-50 to-rose-50 hover:from-red-100 hover:to-rose-100 rounded-3xl p-6 text-left transition-all shadow-xl hover:shadow-2xl"
         >
           <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-6">
@@ -319,10 +380,16 @@ const ChoiceSelection = ({
               </div>
             )}
             <ImageUrl
-              src={badImageError || !badChoice.selectedImageUrl ? '/illustrations/STORY_BAD_CHOICE.svg' : badChoice.selectedImageUrl}
+              src={
+                badImageError || !badChoice.selectedImageUrl
+                  ? "/illustrations/STORY_BAD_CHOICE.svg"
+                  : badChoice.selectedImageUrl
+              }
               alt="Bad choice"
               fill
-              className={`object-cover transition-opacity duration-300 ${badImageLoading ? 'opacity-0' : 'opacity-100'} rounded-3xl m-2`}
+              className={`object-cover transition-opacity duration-300 ${
+                badImageLoading ? "opacity-0" : "opacity-100"
+              } rounded-3xl m-2`}
               sizes="(max-width: 768px) 100vw, 50vw"
               onError={() => {
                 setBadImageError(true);
@@ -331,15 +398,15 @@ const ChoiceSelection = ({
               onLoad={() => setBadImageLoading(false)}
             />
           </div>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             className={`${choiceTextClass} font-bold text-red-700 leading-relaxed`}
             style={{
-              textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
+              textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
               fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
-              textAlign: 'right',
+              textAlign: "right",
             }}
           >
             {badChoice.storyText}
@@ -364,26 +431,45 @@ const StoryEnd = ({
   screenCategory: ScreenCategory;
 }) => {
   const isHebrewStory = isHebrew(story.title || story.problemDescription);
-  const containerDirection = screenCategory === 'small' ? 'flex-col' : 'flex-row';
-  const imageSectionClasses = screenCategory === 'small'
-    ? 'w-full p-6 flex items-center justify-center relative bg-gradient-to-br from-white/90 to-yellow-100 rounded-t-2xl'
-    : 'w-1/2 p-6 flex items-center justify-center relative bg-gradient-to-br from-white/90 to-yellow-100 rounded-l-2xl';
-  const contentSectionClasses = screenCategory === 'small'
-    ? 'w-full p-8 flex flex-col items-center justify-center rounded-b-2xl'
-    : 'w-1/2 p-8 flex flex-col items-center justify-center rounded-r-2xl';
-  const headingClass = screenCategory === 'large' ? 'text-4xl md:text-5xl' : screenCategory === 'medium' ? 'text-4xl' : 'text-3xl';
-  const bodyTextClass = screenCategory === 'large' ? 'text-2xl' : screenCategory === 'medium' ? 'text-2xl' : 'text-xl';
-  const detailTextClass = screenCategory === 'small' ? 'text-lg' : 'text-xl';
-  const buttonTextClass = screenCategory === 'small' ? 'text-xl' : 'text-2xl';
-  
+  const containerDirection =
+    screenCategory === "small" ? "flex-col" : "flex-row";
+  const imageSectionClasses =
+    screenCategory === "small"
+      ? "w-full p-6 flex items-center justify-center relative bg-gradient-to-br from-white/90 to-yellow-100 rounded-t-2xl"
+      : "w-1/2 p-6 flex items-center justify-center relative bg-gradient-to-br from-white/90 to-yellow-100 rounded-l-2xl";
+  const contentSectionClasses =
+    screenCategory === "small"
+      ? "w-full p-8 flex flex-col items-center justify-center rounded-b-2xl"
+      : "w-1/2 p-8 flex flex-col items-center justify-center rounded-r-2xl";
+  const headingClass =
+    screenCategory === "large"
+      ? "text-4xl md:text-5xl"
+      : screenCategory === "medium"
+      ? "text-4xl"
+      : "text-3xl";
+  const bodyTextClass =
+    screenCategory === "large"
+      ? "text-2xl"
+      : screenCategory === "medium"
+      ? "text-2xl"
+      : "text-xl";
+  const detailTextClass = screenCategory === "small" ? "text-lg" : "text-xl";
+  const buttonTextClass = screenCategory === "small" ? "text-xl" : "text-2xl";
+
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
-      <div className={`relative w-full max-w-5xl mx-auto flex ${containerDirection} rounded-3xl shadow-2xl bg-gradient-to-br from-yellow-50 to-purple-100 border-8 border-white`} style={{ minHeight: '60vh' }}>
+      <div
+        className={`relative w-full max-w-5xl mx-auto flex ${containerDirection} rounded-3xl shadow-2xl bg-gradient-to-br from-yellow-50 to-purple-100 border-8 border-white`}
+        style={{ minHeight: "60vh" }}
+      >
         {/* Left page: Illustration */}
         <div className={imageSectionClasses}>
           <div className="relative w-full aspect-[4/3] flex items-center justify-center">
             <ImageUrl
-              src={otherChoice.selectedImageUrl || '/illustrations/STORY_PLACEHOLDER.svg'}
+              src={
+                otherChoice.selectedImageUrl ||
+                "/illustrations/STORY_PLACEHOLDER.svg"
+              }
               alt="Other choice"
               fill
               className="object-contain rounded-3xl shadow-lg m-2"
@@ -392,32 +478,66 @@ const StoryEnd = ({
           </div>
         </div>
         {/* Book spine */}
-        {screenCategory !== 'small' && (
-          <div className="w-2 bg-gradient-to-b from-yellow-300 to-purple-200 shadow-inner rounded-full mx-1" style={{ minHeight: '70vh' }} />
+        {screenCategory !== "small" && (
+          <div
+            className="w-2 bg-gradient-to-b from-yellow-300 to-purple-200 shadow-inner rounded-full mx-1"
+            style={{ minHeight: "70vh" }}
+          />
         )}
         {/* Right page: End message and button */}
         <div className={contentSectionClasses}>
           <div className="max-w-lg w-full text-center flex flex-col items-center justify-center gap-6">
-            <h2 className={`${headingClass} font-bold text-purple-800 mb-2`} style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive', textShadow: '2px 2px 4px rgba(0,0,0,0.1)' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>
-              {isHebrewStory ? '?...הסוף' : 'The End!'}
+            <h2
+              className={`${headingClass} font-bold text-purple-800 mb-2`}
+              style={{
+                fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+                textShadow: "2px 2px 4px rgba(0,0,0,0.1)",
+              }}
+              dir={isHebrewStory ? "rtl" : "ltr"}
+            >
+              {isHebrewStory ? "הסוף...?" : "The End!"}
             </h2>
             {!hasReadBothPaths ? (
               <>
-                <p className={`${bodyTextClass} text-purple-600 mb-2`} style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>
-                  {isHebrewStory ? 'רוצה לראות מה היה קורה אם...' : 'What if...'}
+                <p
+                  className={`${bodyTextClass} text-purple-600 mb-2`}
+                  style={{
+                    fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+                  }}
+                  dir={isHebrewStory ? "rtl" : "ltr"}
+                >
+                  {isHebrewStory
+                    ? "רוצה לראות מה היה קורה אם..."
+                    : "What if..."}
                 </p>
-                <p className={`${detailTextClass} text-purple-900 mb-4`} style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>{otherChoice.storyText}</p>
+                <p
+                  className={`${detailTextClass} text-purple-900 mb-4`}
+                  style={{
+                    fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+                  }}
+                  dir={isHebrewStory ? "rtl" : "ltr"}
+                >
+                  {otherChoice.storyText}
+                </p>
                 <button
                   onClick={onTryOtherPath}
                   className={`px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white ${buttonTextClass} font-bold rounded-full shadow-lg transition-all`}
-                  style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }}
+                  style={{
+                    fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+                  }}
                 >
-                  {isHebrewStory ? 'נסה את המסלול השני ←' : 'Try Other Path →'}
+                  {isHebrewStory ? "נסה את המסלול השני ←" : "Try Other Path →"}
                 </button>
               </>
             ) : (
-              <p className={`${bodyTextClass} text-purple-600`} style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>
-                {isHebrewStory ? '!כל הכבוד על קריאת שני המסלולים 🎉' : 'Great job reading both paths! 🎉'}
+              <p
+                className={`${bodyTextClass} text-purple-600`}
+                style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }}
+                dir={isHebrewStory ? "rtl" : "ltr"}
+              >
+                {isHebrewStory
+                  ? "!כל הכבוד על קריאת שני המסלולים 🎉"
+                  : "Great job reading both paths! 🎉"}
               </p>
             )}
           </div>
@@ -436,7 +556,7 @@ const EndOfStorySurvey = ({
 }: {
   goodChoice: StoryPage;
   badChoice: StoryPage;
-  onSelectFinalChoice: (choice: 'good' | 'bad') => void;
+  onSelectFinalChoice: (choice: "good" | "bad") => void;
   story: Story;
   screenCategory: ScreenCategory;
 }) => {
@@ -444,11 +564,22 @@ const EndOfStorySurvey = ({
   const [badImageError, setBadImageError] = useState(false);
   const [goodImageLoading, setGoodImageLoading] = useState(true);
   const [badImageLoading, setBadImageLoading] = useState(true);
-  
+
   const isHebrewStory = isHebrew(story.title || story.problemDescription);
-  const choiceTextClass = screenCategory === 'large' ? 'text-2xl md:text-3xl' : screenCategory === 'medium' ? 'text-2xl' : 'text-xl';
-  const headingClass = screenCategory === 'large' ? 'text-4xl md:text-5xl' : screenCategory === 'medium' ? 'text-4xl' : 'text-3xl';
-  const gridColumnsClass = screenCategory === 'small' ? 'grid-cols-1' : 'grid-cols-2';
+  const choiceTextClass =
+    screenCategory === "large"
+      ? "text-2xl md:text-3xl"
+      : screenCategory === "medium"
+      ? "text-2xl"
+      : "text-xl";
+  const headingClass =
+    screenCategory === "large"
+      ? "text-4xl md:text-5xl"
+      : screenCategory === "medium"
+      ? "text-4xl"
+      : "text-3xl";
+  const gridColumnsClass =
+    screenCategory === "small" ? "grid-cols-1" : "grid-cols-2";
 
   return (
     <motion.div
@@ -457,29 +588,37 @@ const EndOfStorySurvey = ({
       exit={{ opacity: 0, y: -20 }}
       className="w-full h-full flex flex-col items-center justify-center p-6"
     >
-      <motion.h2 
+      <motion.h2
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.2 }}
         className={`${headingClass} font-bold text-center text-purple-800 mb-4`}
         style={{
-          textShadow: '2px 2px 4px rgba(0,0,0,0.1)',
-          fontFamily: '"Comic Sans MS", "Comic Sans", cursive'
+          textShadow: "2px 2px 4px rgba(0,0,0,0.1)",
+          fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
         }}
-        dir={isHebrewStory ? 'rtl' : 'ltr'}
+        dir={isHebrewStory ? "rtl" : "ltr"}
       >
-        {isHebrewStory ? '?אז איזו דרך היית בוחר במצב הזה' : 'So which way would you choose in this situation?'}
+        {isHebrewStory
+          ? "?אז איזו דרך היית בוחר במצב הזה"
+          : "So which way would you choose in this situation?"}
       </motion.h2>
 
-      <p className="text-xl text-purple-600 mb-8 text-center" style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>
-        {isHebrewStory ? 'קראת את שני המסלולים - עכשיו ספר לנו איזה דרך היית בוחר באמת!' : "You've read both paths - now tell us which one you would actually choose!"}
+      <p
+        className="text-xl text-purple-600 mb-8 text-center"
+        style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }}
+        dir={isHebrewStory ? "rtl" : "ltr"}
+      >
+        {isHebrewStory
+          ? "קראת את שני המסלולים - עכשיו ספר לנו איזה דרך היית בוחר באמת!"
+          : "You've read both paths - now tell us which one you would actually choose!"}
       </p>
 
       <div className={`grid ${gridColumnsClass} gap-8 max-w-6xl w-full`}>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => onSelectFinalChoice('good')}
+          onClick={() => onSelectFinalChoice("good")}
           className="bg-gradient-to-br from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-3xl p-6 text-left transition-all shadow-xl hover:shadow-2xl"
         >
           <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-6">
@@ -493,10 +632,16 @@ const EndOfStorySurvey = ({
               </div>
             )}
             <ImageUrl
-              src={goodImageError || !goodChoice.selectedImageUrl ? '/illustrations/STORY_GOOD_CHOICE.svg' : goodChoice.selectedImageUrl}
+              src={
+                goodImageError || !goodChoice.selectedImageUrl
+                  ? "/illustrations/STORY_GOOD_CHOICE.svg"
+                  : goodChoice.selectedImageUrl
+              }
               alt="Good choice"
               fill
-              className={`object-cover transition-opacity duration-300 ${goodImageLoading ? 'opacity-0' : 'opacity-100'} rounded-3xl m-2`}
+              className={`object-cover transition-opacity duration-300 ${
+                goodImageLoading ? "opacity-0" : "opacity-100"
+              } rounded-3xl m-2`}
               sizes="(max-width: 768px) 100vw, 50vw"
               onError={() => {
                 setGoodImageError(true);
@@ -505,14 +650,14 @@ const EndOfStorySurvey = ({
               onLoad={() => setGoodImageLoading(false)}
             />
           </div>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             className={`${choiceTextClass} font-bold text-green-700 leading-relaxed`}
             style={{
-              textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
-              fontFamily: '"Comic Sans MS", "Comic Sans", cursive'
+              textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
+              fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
             }}
           >
             {goodChoice.storyText}
@@ -522,7 +667,7 @@ const EndOfStorySurvey = ({
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => onSelectFinalChoice('bad')}
+          onClick={() => onSelectFinalChoice("bad")}
           className="bg-gradient-to-br from-red-50 to-rose-50 hover:from-red-100 hover:to-rose-100 rounded-3xl p-6 text-left transition-all shadow-xl hover:shadow-2xl"
         >
           <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-6">
@@ -536,10 +681,16 @@ const EndOfStorySurvey = ({
               </div>
             )}
             <ImageUrl
-              src={badImageError || !badChoice.selectedImageUrl ? '/illustrations/STORY_BAD_CHOICE.svg' : badChoice.selectedImageUrl}
+              src={
+                badImageError || !badChoice.selectedImageUrl
+                  ? "/illustrations/STORY_BAD_CHOICE.svg"
+                  : badChoice.selectedImageUrl
+              }
               alt="Bad choice"
               fill
-              className={`object-cover transition-opacity duration-300 ${badImageLoading ? 'opacity-0' : 'opacity-100'} rounded-3xl m-2`}
+              className={`object-cover transition-opacity duration-300 ${
+                badImageLoading ? "opacity-0" : "opacity-100"
+              } rounded-3xl m-2`}
               sizes="(max-width: 768px) 100vw, 50vw"
               onError={() => {
                 setBadImageError(true);
@@ -548,14 +699,14 @@ const EndOfStorySurvey = ({
               onLoad={() => setBadImageLoading(false)}
             />
           </div>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             className={`${choiceTextClass} font-bold text-red-700 leading-relaxed`}
             style={{
-              textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
-              fontFamily: '"Comic Sans MS", "Comic Sans", cursive'
+              textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
+              fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
             }}
           >
             {badChoice.storyText}
@@ -566,13 +717,13 @@ const EndOfStorySurvey = ({
   );
 };
 
-const StoryReader = ({ 
-  story, 
-  currentPage, 
-  onNextPage, 
-  onPreviousPage, 
-  onSelectChoice, 
-  selectedChoice, 
+const StoryReader = ({
+  story,
+  currentPage,
+  onNextPage,
+  onPreviousPage,
+  onSelectChoice,
+  selectedChoice,
   readPaths,
   showSurvey,
   onSelectFinalChoice,
@@ -581,21 +732,38 @@ const StoryReader = ({
 }: StoryReaderProps) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [overlayDimmed, setOverlayDimmed] = useState(false);
-  const [pageDirection, setPageDirection] = useState<'next' | 'prev'>('next');
+  const [pageDirection, setPageDirection] = useState<"next" | "prev">("next");
 
-  const navButtonBaseClasses = screenCategory === 'large'
-    ? 'w-16 h-16 border-4'
-    : screenCategory === 'medium'
-      ? 'w-14 h-14 border-[3px]'
-      : 'w-12 h-12 border-2';
-  const navIconSizeClass = screenCategory === 'large'
-    ? 'h-8 w-8'
-    : screenCategory === 'medium'
-      ? 'h-7 w-7'
-      : 'h-6 w-6';
-  const leftPositionClass = screenCategory === 'large' ? 'left-10' : screenCategory === 'medium' ? 'left-8' : 'left-5';
-  const rightPositionClass = screenCategory === 'large' ? 'right-10' : screenCategory === 'medium' ? 'right-8' : 'right-5';
-  const readerPaddingClass = screenCategory === 'large' ? 'px-12 py-8' : screenCategory === 'medium' ? 'px-8 py-6' : 'px-4 py-4';
+  const navButtonBaseClasses =
+    screenCategory === "large"
+      ? "w-16 h-16 border-4"
+      : screenCategory === "medium"
+      ? "w-14 h-14 border-[3px]"
+      : "w-12 h-12 border-2";
+  const navIconSizeClass =
+    screenCategory === "large"
+      ? "h-8 w-8"
+      : screenCategory === "medium"
+      ? "h-7 w-7"
+      : "h-6 w-6";
+  const leftPositionClass =
+    screenCategory === "large"
+      ? "left-10"
+      : screenCategory === "medium"
+      ? "left-8"
+      : "left-5";
+  const rightPositionClass =
+    screenCategory === "large"
+      ? "right-10"
+      : screenCategory === "medium"
+      ? "right-8"
+      : "right-5";
+  const readerPaddingClass =
+    screenCategory === "large"
+      ? "px-12 py-8"
+      : screenCategory === "medium"
+      ? "px-8 py-6"
+      : "px-4 py-4";
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -620,18 +788,30 @@ const StoryReader = ({
 
     if (!selectedChoice) {
       // Show normal pages until choice selection
-      const normalPages = story.pages.filter(page => page.pageType === PageType.NORMAL);
+      const normalPages = story.pages.filter(
+        (page) => page.pageType === PageType.NORMAL
+      );
       // Ensure we have pages and the current page is valid
-      if (normalPages.length > 0 && currentPage >= 1 && currentPage <= normalPages.length) {
+      if (
+        normalPages.length > 0 &&
+        currentPage >= 1 &&
+        currentPage <= normalPages.length
+      ) {
         return normalPages[currentPage - 1]; // Adjust for 1-based indexing
       }
     } else {
       // Show pages for the selected path
-      const pathPages = story.pages.filter(page => 
-        page.pageType === (selectedChoice === 'good' ? PageType.GOOD : PageType.BAD)
+      const pathPages = story.pages.filter(
+        (page) =>
+          page.pageType ===
+          (selectedChoice === "good" ? PageType.GOOD : PageType.BAD)
       );
       // Ensure we have pages and the current page is valid
-      if (pathPages.length > 0 && currentPage >= 1 && currentPage <= pathPages.length) {
+      if (
+        pathPages.length > 0 &&
+        currentPage >= 1 &&
+        currentPage <= pathPages.length
+      ) {
         return pathPages[currentPage - 1]; // Adjust for 1-based indexing
       }
     }
@@ -641,37 +821,48 @@ const StoryReader = ({
   // Check if we're at the choice selection point
   const isChoiceSelection = () => {
     if (!story) return false;
-    const normalPages = story.pages.filter(page => page.pageType === PageType.NORMAL);
+    const normalPages = story.pages.filter(
+      (page) => page.pageType === PageType.NORMAL
+    );
     return currentPage > normalPages.length && !selectedChoice;
   };
 
   // Check if we're at the end of the selected path
   const isEndOfPath = () => {
     if (!selectedChoice) return false;
-    const pathPages = story.pages.filter(page => 
-      page.pageType === (selectedChoice === 'good' ? PageType.GOOD : PageType.BAD)
+    const pathPages = story.pages.filter(
+      (page) =>
+        page.pageType ===
+        (selectedChoice === "good" ? PageType.GOOD : PageType.BAD)
     );
     return currentPage > pathPages.length;
   };
 
   // Wrap navigation handlers to track direction
   const handleNextPage = () => {
-    setPageDirection('next');
+    setPageDirection("next");
     onNextPage();
   };
   const handlePreviousPage = () => {
-    setPageDirection('prev');
+    setPageDirection("prev");
     onPreviousPage();
   };
 
   const currentPageData = getCurrentPageData();
-  const goodChoice = story.pages.find(page => page.pageType === PageType.GOOD_CHOICE);
-  const badChoice = story.pages.find(page => page.pageType === PageType.BAD_CHOICE);
+  const goodChoice = story.pages.find(
+    (page) => page.pageType === PageType.GOOD_CHOICE
+  );
+  const badChoice = story.pages.find(
+    (page) => page.pageType === PageType.BAD_CHOICE
+  );
 
   return (
     <div className="fixed inset-0 w-screen h-screen bg-gradient-to-b from-purple-100 to-yellow-100 overflow-hidden flex flex-col items-center justify-center z-50">
       {/* Book spread content or full-image content */}
-      <div className={`flex-1 w-full flex flex-col items-center justify-center ${readerPaddingClass}`} style={{ perspective: 2000 }}>
+      <div
+        className={`flex-1 w-full flex flex-col items-center justify-center ${readerPaddingClass}`}
+        style={{ perspective: 2000 }}
+      >
         <AnimatePresence mode="wait" initial={false}>
           {showSurvey ? (
             <EndOfStorySurvey
@@ -690,11 +881,35 @@ const StoryReader = ({
               className="w-full h-full flex items-center justify-center"
             >
               <div className="text-center p-8 bg-white/90 rounded-3xl shadow-2xl">
-                <h2 className="text-4xl font-bold text-purple-800 mb-4" style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrew(story.title || story.problemDescription) ? 'rtl' : 'ltr'}>
-                  {isHebrew(story.title || story.problemDescription) ? '!תודה רבה 🎉' : 'Thank you! 🎉'}
+                <h2
+                  className="text-4xl font-bold text-purple-800 mb-4"
+                  style={{
+                    fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+                  }}
+                  dir={
+                    isHebrew(story.title || story.problemDescription)
+                      ? "rtl"
+                      : "ltr"
+                  }
+                >
+                  {isHebrew(story.title || story.problemDescription)
+                    ? "!תודה רבה 🎉"
+                    : "Thank you! 🎉"}
                 </h2>
-                <p className="text-2xl text-purple-600" style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrew(story.title || story.problemDescription) ? 'rtl' : 'ltr'}>
-                  {isHebrew(story.title || story.problemDescription) ? '!הבחירה שלך נשמרה' : 'Your choice has been saved!'}
+                <p
+                  className="text-2xl text-purple-600"
+                  style={{
+                    fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+                  }}
+                  dir={
+                    isHebrew(story.title || story.problemDescription)
+                      ? "rtl"
+                      : "ltr"
+                  }
+                >
+                  {isHebrew(story.title || story.problemDescription)
+                    ? "!הבחירה שלך נשמרה"
+                    : "Your choice has been saved!"}
                 </p>
               </div>
             </motion.div>
@@ -709,7 +924,10 @@ const StoryReader = ({
             >
               <div className="relative w-full h-full rounded-3xl overflow-hidden">
                 <ImageUrl
-                  src={currentPageData?.selectedImageUrl || '/illustrations/STORY_COVER.svg'}
+                  src={
+                    currentPageData?.selectedImageUrl ||
+                    "/illustrations/STORY_COVER.svg"
+                  }
                   alt="Story cover"
                   fill
                   className="w-auto h-auto object-contain transition-opacity duration-300 rounded-3xl m-2"
@@ -719,64 +937,105 @@ const StoryReader = ({
                 {/* <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/10 via-transparent to-black/30" /> */}
                 <div className="absolute left-0 right-10 bottom-0 z-10 flex justify-center">
                   <div className="m-4 mb-8 max-w-3xl w-full bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-6 md:p-10 text-center flex flex-col items-center gap-4">
-                    <h1 className="text-4xl md:text-5xl font-bold text-purple-800 mb-2" style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive', textShadow: '2px 2px 4px rgba(0,0,0,0.1)' }} dir={isHebrew(story.title || story.problemDescription) ? 'rtl' : 'ltr'}>{story.title}</h1>
+                    <h1
+                      className="text-4xl md:text-5xl font-bold text-purple-800 mb-2"
+                      style={{
+                        fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+                        textShadow: "2px 2px 4px rgba(0,0,0,0.1)",
+                      }}
+                      dir={
+                        isHebrew(story.title || story.problemDescription)
+                          ? "rtl"
+                          : "ltr"
+                      }
+                    >
+                      {story.title}
+                    </h1>
                     {story.problemDescription && (
-                      <p className="text-lg md:text-2xl text-gray-700 mb-4" style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrew(story.title || story.problemDescription) ? 'rtl' : 'ltr'}>{story.problemDescription}</p>
+                      <p
+                        className="text-lg md:text-2xl text-gray-700 mb-4"
+                        style={{
+                          fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+                        }}
+                        dir={
+                          isHebrew(story.title || story.problemDescription)
+                            ? "rtl"
+                            : "ltr"
+                        }
+                      >
+                        {story.problemDescription}
+                      </p>
                     )}
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleNextPage}
                       className="px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-full shadow-lg text-xl transition-colors"
-                      style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }}
+                      style={{
+                        fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+                      }}
                     >
-                      {isHebrew(story.title || story.problemDescription) ? 'התחל לקרוא' : 'Start Reading'}
+                      {isHebrew(story.title || story.problemDescription)
+                        ? "התחל לקרוא"
+                        : "Start Reading"}
                     </motion.button>
                   </div>
                 </div>
               </div>
             </motion.div>
           ) : isChoiceSelection() ? (
-            <ChoiceSelection 
+            <ChoiceSelection
               key="choice"
-              goodChoice={goodChoice!} 
-              badChoice={badChoice!} 
+              goodChoice={goodChoice!}
+              badChoice={badChoice!}
               onSelectChoice={onSelectChoice}
               screenCategory={screenCategory}
             />
           ) : isEndOfPath() ? (
-            <StoryEnd 
+            <StoryEnd
               key="end"
-              onTryOtherPath={() => onSelectChoice(selectedChoice === 'good' ? 'bad' : 'good')} 
-              otherChoice={selectedChoice === 'good' ? badChoice! : goodChoice!}
+              onTryOtherPath={() =>
+                onSelectChoice(selectedChoice === "good" ? "bad" : "good")
+              }
+              otherChoice={selectedChoice === "good" ? badChoice! : goodChoice!}
               hasReadBothPaths={readPaths.size === 2}
               story={story}
               screenCategory={screenCategory}
             />
-          ) : currentPageData && (
-            <motion.div
-              key={currentPage}
-              initial={{
-                rotateY: pageDirection === 'next' ? 90 : -90,
-                opacity: 0,
-                transformOrigin: pageDirection === 'next' ? 'right center' : 'left center',
-              }}
-              animate={{
-                rotateY: 0,
-                opacity: 1,
-                transformOrigin: pageDirection === 'next' ? 'right center' : 'left center',
-              }}
-              exit={{
-                rotateY: pageDirection === 'next' ? -90 : 90,
-                opacity: 0,
-                transformOrigin: pageDirection === 'next' ? 'left center' : 'right center',
-              }}
-              transition={{ type: 'tween', duration: 0.7, ease: 'easeInOut' }}
-              className="w-full h-full"
-              style={{ willChange: 'transform' }}
-            >
-              <StoryPageComponent page={currentPageData} overlayDimmed={overlayDimmed} onToggleOverlay={handleToggleOverlay} screenCategory={screenCategory} />
-            </motion.div>
+          ) : (
+            currentPageData && (
+              <motion.div
+                key={currentPage}
+                initial={{
+                  rotateY: pageDirection === "next" ? 90 : -90,
+                  opacity: 0,
+                  transformOrigin:
+                    pageDirection === "next" ? "right center" : "left center",
+                }}
+                animate={{
+                  rotateY: 0,
+                  opacity: 1,
+                  transformOrigin:
+                    pageDirection === "next" ? "right center" : "left center",
+                }}
+                exit={{
+                  rotateY: pageDirection === "next" ? -90 : 90,
+                  opacity: 0,
+                  transformOrigin:
+                    pageDirection === "next" ? "left center" : "right center",
+                }}
+                transition={{ type: "tween", duration: 0.7, ease: "easeInOut" }}
+                className="w-full h-full"
+                style={{ willChange: "transform" }}
+              >
+                <StoryPageComponent
+                  page={currentPageData}
+                  overlayDimmed={overlayDimmed}
+                  onToggleOverlay={handleToggleOverlay}
+                  screenCategory={screenCategory}
+                />
+              </motion.div>
+            )
           )}
         </AnimatePresence>
       </div>
@@ -792,8 +1051,19 @@ const StoryReader = ({
               style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }}
               aria-label="Previous Page"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className={`${navIconSizeClass} text-purple-600`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className={`${navIconSizeClass} text-purple-600`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={3}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
             </motion.button>
           )}
@@ -805,8 +1075,19 @@ const StoryReader = ({
             style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }}
             aria-label="Next Page"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className={`${navIconSizeClass} text-purple-600`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className={`${navIconSizeClass} text-purple-600`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={3}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </motion.button>
         </>
@@ -820,12 +1101,34 @@ const StoryReader = ({
           className="p-3 bg-white/80 backdrop-blur-sm hover:bg-white text-purple-600 rounded-full shadow-lg transition-colors"
         >
           {isFullscreen ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"
+              />
             </svg>
           )}
         </motion.button>
@@ -840,14 +1143,16 @@ export default function StoryReaderPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [selectedChoice, setSelectedChoice] = useState<'good' | 'bad' | undefined>();
-  const [readPaths, setReadPaths] = useState<Set<'good' | 'bad'>>(new Set());
+  const [selectedChoice, setSelectedChoice] = useState<
+    "good" | "bad" | undefined
+  >();
+  const [readPaths, setReadPaths] = useState<Set<"good" | "bad">>(new Set());
   const [showSurvey, setShowSurvey] = useState(false);
   const [surveyCompleted, setSurveyCompleted] = useState(false);
-  const [screenCategory, setScreenCategory] = useState<ScreenCategory>('large');
+  const [screenCategory, setScreenCategory] = useState<ScreenCategory>("large");
   const [orientationBlocked, setOrientationBlocked] = useState(false);
 
-  const shouldForceLandscape = screenCategory !== 'large';
+  const shouldForceLandscape = screenCategory !== "large";
   const showOrientationOverlay = shouldForceLandscape && orientationBlocked;
 
   // Reset all state when storyId changes (e.g., browser back button)
@@ -874,38 +1179,41 @@ export default function StoryReaderPage() {
   useEffect(() => {
     if (storyId && !loading) {
       const progress = { page: currentPage, choice: selectedChoice };
-      localStorage.setItem(`story-progress-${storyId}`, JSON.stringify(progress));
+      localStorage.setItem(
+        `story-progress-${storyId}`,
+        JSON.stringify(progress)
+      );
     }
   }, [currentPage, selectedChoice, storyId, loading]);
 
   useEffect(() => {
     const fetchStory = async () => {
       if (!storyId) {
-        setError('Missing story ID');
+        setError("Missing story ID");
         setLoading(false);
         return;
       }
 
       try {
         const response = await StoryApi.getStoryById(String(storyId));
-        
+
         if (!response.success) {
           throw new Error(response.error);
         }
-        
+
         if (!response.data) {
-          throw new Error('Story not found');
+          throw new Error("Story not found");
         }
-        
+
         const storyData = response.data;
         if (!storyData) {
-          throw new Error('Story not found');
+          throw new Error("Story not found");
         }
-        
+
         setStory(storyData);
       } catch (_err) {
-        console.error('Error fetching story:', _err);
-        setError('Failed to load story');
+        console.error("Error fetching story:", _err);
+        setError("Failed to load story");
       } finally {
         setLoading(false);
       }
@@ -917,7 +1225,7 @@ export default function StoryReaderPage() {
   // Preload all story page images after story loads
   useEffect(() => {
     if (!story) return;
-    story.pages.forEach(page => {
+    story.pages.forEach((page) => {
       if (page.selectedImageUrl) {
         const img = new window.Image();
         img.src = page.selectedImageUrl;
@@ -926,42 +1234,46 @@ export default function StoryReaderPage() {
   }, [story]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
-    const orientationMedia = window.matchMedia('(orientation: portrait)');
+    const orientationMedia = window.matchMedia("(orientation: portrait)");
 
     const applyLayoutSizing = () => {
       const category = getScreenCategory(window.innerWidth);
       setScreenCategory(category);
 
-      if (category === 'large') {
+      if (category === "large") {
         setOrientationBlocked(false);
         return;
       }
 
       const isPortrait = orientationMedia.matches;
       setOrientationBlocked(isPortrait);
-      const screenOrientation = (window.screen as Screen & {
-        orientation?: ScreenOrientation & { lock?: (orientation: string) => Promise<void> };
-      }).orientation;
+      const screenOrientation = (
+        window.screen as Screen & {
+          orientation?: ScreenOrientation & {
+            lock?: (orientation: string) => Promise<void>;
+          };
+        }
+      ).orientation;
       if (screenOrientation?.lock) {
-        screenOrientation.lock('landscape').catch(() => {});
+        screenOrientation.lock("landscape").catch(() => {});
       }
     };
 
     applyLayoutSizing();
 
-    window.addEventListener('resize', applyLayoutSizing);
+    window.addEventListener("resize", applyLayoutSizing);
     if (orientationMedia.addEventListener) {
-      orientationMedia.addEventListener('change', applyLayoutSizing);
+      orientationMedia.addEventListener("change", applyLayoutSizing);
     } else if (orientationMedia.addListener) {
       orientationMedia.addListener(applyLayoutSizing);
     }
 
     return () => {
-      window.removeEventListener('resize', applyLayoutSizing);
+      window.removeEventListener("resize", applyLayoutSizing);
       if (orientationMedia.removeEventListener) {
-        orientationMedia.removeEventListener('change', applyLayoutSizing);
+        orientationMedia.removeEventListener("change", applyLayoutSizing);
       } else if (orientationMedia.removeListener) {
         orientationMedia.removeListener(applyLayoutSizing);
       }
@@ -973,23 +1285,27 @@ export default function StoryReaderPage() {
 
     if (!selectedChoice) {
       // In normal pages
-      const normalPages = story.pages.filter(page => page.pageType === PageType.NORMAL);
+      const normalPages = story.pages.filter(
+        (page) => page.pageType === PageType.NORMAL
+      );
       if (currentPage < normalPages.length) {
-        setCurrentPage(prev => prev + 1);
+        setCurrentPage((prev) => prev + 1);
       } else {
         // If we're at the last normal page, move to choice selection
         setCurrentPage(normalPages.length + 1);
       }
     } else {
       // In choice path pages
-      const pathPages = story.pages.filter(page => 
-        page.pageType === (selectedChoice === 'good' ? PageType.GOOD : PageType.BAD)
+      const pathPages = story.pages.filter(
+        (page) =>
+          page.pageType ===
+          (selectedChoice === "good" ? PageType.GOOD : PageType.BAD)
       );
       if (currentPage < pathPages.length) {
-        setCurrentPage(prev => prev + 1);
+        setCurrentPage((prev) => prev + 1);
       } else {
         // If we're at the last page of the path, mark this path as read
-        setReadPaths(prev => new Set(prev).add(selectedChoice));
+        setReadPaths((prev) => new Set(prev).add(selectedChoice));
         // Move to end screen
         setCurrentPage(pathPages.length + 1);
       }
@@ -998,7 +1314,7 @@ export default function StoryReaderPage() {
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
+      setCurrentPage((prev) => prev - 1);
     }
   };
 
@@ -1006,19 +1322,19 @@ export default function StoryReaderPage() {
     // No redirect for public story reading
   };
 
-  const handleSelectChoice = (choice: 'good' | 'bad') => {
+  const handleSelectChoice = (choice: "good" | "bad") => {
     setSelectedChoice(choice);
     setCurrentPage(1); // Reset to first page of the selected path
   };
 
-  const handleSelectFinalChoice = async (choice: 'good' | 'bad') => {
+  const handleSelectFinalChoice = async (choice: "good" | "bad") => {
     if (!story || !storyId) return;
 
     try {
       // Create the new selection entry
       const newSelection = {
         timestamp: new Date(),
-        choice: choice
+        choice: choice,
       };
 
       // Get existing selections or create empty array
@@ -1027,13 +1343,13 @@ export default function StoryReaderPage() {
 
       // Update the story in Firebase
       await StoryApi.updateStoryPartial(String(storyId), {
-        endOfStorySelections: updatedSelections
+        endOfStorySelections: updatedSelections,
       });
 
       // Mark survey as completed
       setSurveyCompleted(true);
       setShowSurvey(false);
-      
+
       // Clear story progress from localStorage
       if (storyId) {
         localStorage.removeItem(`story-progress-${storyId}`);
@@ -1041,7 +1357,7 @@ export default function StoryReaderPage() {
 
       // Show success message (no redirect for public story reading)
     } catch (error) {
-      console.error('Error saving end of story selection:', error);
+      console.error("Error saving end of story selection:", error);
       // Still mark as completed to not block the user (no redirect for public reading)
       setSurveyCompleted(true);
       setShowSurvey(false);
@@ -1092,14 +1408,32 @@ export default function StoryReaderPage() {
             strokeWidth={1.5}
           >
             <rect x="5" y="4" width="14" height="16" rx="2" ry="2" />
-            <path d="M4 7.5V5a1 1 0 0 1 1-1h2.5" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M20 16.5V19a1 1 0 0 1-1 1h-2.5" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M3 12a9 9 0 0 1 9-9" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M21 12a9 9 0 0 1-9 9" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M4 7.5V5a1 1 0 0 1 1-1h2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M20 16.5V19a1 1 0 0 1-1 1h-2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M3 12a9 9 0 0 1 9-9"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M21 12a9 9 0 0 1-9 9"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
           <h2 className="text-3xl font-bold">Rotate your device</h2>
           <p className="text-lg text-white/90 max-w-md">
-            For the best reading experience, please rotate your device to landscape. This helps us keep the story immersive on smaller screens.
+            For the best reading experience, please rotate your device to
+            landscape. This helps us keep the story immersive on smaller
+            screens.
           </p>
         </div>
       )}
