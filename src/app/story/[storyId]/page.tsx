@@ -78,7 +78,7 @@ const StoryPageComponent = ({
 
   const overlayMaxHeight = screenCategory === 'large' ? '40vh' : screenCategory === 'medium' ? '50vh' : '60vh';
   const overlayPadding = screenCategory === 'large' ? 'p-6 md:p-10' : screenCategory === 'medium' ? 'p-6 md:p-8' : 'p-5';
-  const overlayWidthClass = screenCategory === 'large' ? 'max-w-3xl' : screenCategory === 'medium' ? 'max-w-2xl' : 'max-w-xl';
+  const overlayWidthClass = screenCategory === 'large' ? 'max-w-5xl' : screenCategory === 'medium' ? 'max-w-4xl' : 'max-w-2xl';
   const textSizeClass = screenCategory === 'large' ? 'text-2xl md:text-3xl' : screenCategory === 'medium' ? 'text-2xl' : 'text-xl';
   const toggleButtonPosition = screenCategory === 'large' ? 'right-20' : 'right-4';
 
@@ -123,6 +123,21 @@ const StoryPageComponent = ({
     );
   };
 
+
+    const getWhiteShadowText = (text: string) => {
+      if (!text) return null;
+      return (
+        <span style={{
+          fontFamily: 'inherit',
+          color: 'white',
+          fontSize: '1.3em',
+          textShadow: '2px 2px 4px rgba(0,0,0,0.7), 0 0 5px rgba(0,0,0,0.5)',
+        }}>
+          {text}
+        </span>
+      );
+    };
+
   return (
     <div
       className="relative w-full h-full min-h-screen min-w-screen overflow-hidden select-none"
@@ -144,7 +159,7 @@ const StoryPageComponent = ({
           src={imageError || !page.selectedImageUrl ? getFallbackImage() : page.selectedImageUrl}
           alt={`Illustration for page ${page.pageNum}`}
           fill
-          className={`object-contain transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+          className={`object-contain transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'} rounded-3xl m-2`}
           sizes="100vw"
           priority
           onError={() => {
@@ -153,9 +168,8 @@ const StoryPageComponent = ({
           }}
           onLoad={() => setImageLoading(false)}
         />
-        {/* Optional: subtle vignette for readability */}
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/10 via-transparent to-black/30" />
       </div>
+
       {/* Text overlay */}
       <motion.div
         initial={{ opacity: 0.98 }}
@@ -165,7 +179,7 @@ const StoryPageComponent = ({
         style={{ pointerEvents: 'none' }}
       >
         <div
-          className={`m-4 mb-8 ${overlayWidthClass} w-full bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl ${overlayPadding} text-center overflow-y-auto`}
+          className={`m-4 ${overlayWidthClass} w-full backdrop-blur-md rounded-3xl ${overlayPadding} text-center overflow-y-auto`}
           style={{
             maxHeight: overlayMaxHeight,
             fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
@@ -173,7 +187,7 @@ const StoryPageComponent = ({
           }}
         >
           <p className={`${textSizeClass} font-bold leading-relaxed text-purple-900 storybook-font`} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.08)', wordBreak: 'break-word' }} dir="ltr">
-            {getDropCapText(page.storyText)}
+            {getWhiteShadowText(page.storyText)}
           </p>
         </div>
       </motion.div>
@@ -240,7 +254,7 @@ const ChoiceSelection = ({
           fontFamily: '"Comic Sans MS", "Comic Sans", cursive'
         }}
       >
-        What will you choose?
+        מה הבחירה שלך?
       </motion.h2>
 
       <div className={`grid ${gridColumnsClass} gap-8 max-w-6xl w-full`}>
@@ -264,7 +278,7 @@ const ChoiceSelection = ({
               src={goodImageError || !goodChoice.selectedImageUrl ? '/illustrations/STORY_GOOD_CHOICE.svg' : goodChoice.selectedImageUrl}
               alt="Good choice"
               fill
-              className={`object-cover transition-opacity duration-300 ${goodImageLoading ? 'opacity-0' : 'opacity-100'}`}
+              className={`object-cover transition-opacity duration-300 ${goodImageLoading ? 'opacity-0' : 'opacity-100'} rounded-3xl m-2`}
               sizes="(max-width: 768px) 100vw, 50vw"
               onError={() => {
                 setGoodImageError(true);
@@ -280,7 +294,8 @@ const ChoiceSelection = ({
             className={`${choiceTextClass} font-bold text-green-700 leading-relaxed`}
             style={{
               textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
-              fontFamily: '"Comic Sans MS", "Comic Sans", cursive'
+              fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+              textAlign: 'right',
             }}
           >
             {goodChoice.storyText}
@@ -307,7 +322,7 @@ const ChoiceSelection = ({
               src={badImageError || !badChoice.selectedImageUrl ? '/illustrations/STORY_BAD_CHOICE.svg' : badChoice.selectedImageUrl}
               alt="Bad choice"
               fill
-              className={`object-cover transition-opacity duration-300 ${badImageLoading ? 'opacity-0' : 'opacity-100'}`}
+              className={`object-cover transition-opacity duration-300 ${badImageLoading ? 'opacity-0' : 'opacity-100'} rounded-3xl m-2`}
               sizes="(max-width: 768px) 100vw, 50vw"
               onError={() => {
                 setBadImageError(true);
@@ -323,7 +338,8 @@ const ChoiceSelection = ({
             className={`${choiceTextClass} font-bold text-red-700 leading-relaxed`}
             style={{
               textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
-              fontFamily: '"Comic Sans MS", "Comic Sans", cursive'
+              fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+              textAlign: 'right',
             }}
           >
             {badChoice.storyText}
@@ -353,8 +369,8 @@ const StoryEnd = ({
     ? 'w-full p-6 flex items-center justify-center relative bg-gradient-to-br from-white/90 to-yellow-100 rounded-t-2xl'
     : 'w-1/2 p-6 flex items-center justify-center relative bg-gradient-to-br from-white/90 to-yellow-100 rounded-l-2xl';
   const contentSectionClasses = screenCategory === 'small'
-    ? 'w-full p-8 flex flex-col items-center justify-center bg-gradient-to-br from-white/90 to-purple-50 rounded-b-2xl'
-    : 'w-1/2 p-8 flex flex-col items-center justify-center bg-gradient-to-br from-white/90 to-purple-50 rounded-r-2xl';
+    ? 'w-full p-8 flex flex-col items-center justify-center rounded-b-2xl'
+    : 'w-1/2 p-8 flex flex-col items-center justify-center rounded-r-2xl';
   const headingClass = screenCategory === 'large' ? 'text-4xl md:text-5xl' : screenCategory === 'medium' ? 'text-4xl' : 'text-3xl';
   const bodyTextClass = screenCategory === 'large' ? 'text-2xl' : screenCategory === 'medium' ? 'text-2xl' : 'text-xl';
   const detailTextClass = screenCategory === 'small' ? 'text-lg' : 'text-xl';
@@ -370,7 +386,7 @@ const StoryEnd = ({
               src={otherChoice.selectedImageUrl || '/illustrations/STORY_PLACEHOLDER.svg'}
               alt="Other choice"
               fill
-              className="object-contain rounded-xl shadow-lg"
+              className="object-contain rounded-3xl shadow-lg m-2"
               sizes="50vw"
             />
           </div>
@@ -383,7 +399,7 @@ const StoryEnd = ({
         <div className={contentSectionClasses}>
           <div className="max-w-lg w-full text-center flex flex-col items-center justify-center gap-6">
             <h2 className={`${headingClass} font-bold text-purple-800 mb-2`} style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive', textShadow: '2px 2px 4px rgba(0,0,0,0.1)' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>
-              {isHebrewStory ? '!הסוף' : 'The End!'}
+              {isHebrewStory ? '?...הסוף' : 'The End!'}
             </h2>
             {!hasReadBothPaths ? (
               <>
@@ -480,7 +496,7 @@ const EndOfStorySurvey = ({
               src={goodImageError || !goodChoice.selectedImageUrl ? '/illustrations/STORY_GOOD_CHOICE.svg' : goodChoice.selectedImageUrl}
               alt="Good choice"
               fill
-              className={`object-cover transition-opacity duration-300 ${goodImageLoading ? 'opacity-0' : 'opacity-100'}`}
+              className={`object-cover transition-opacity duration-300 ${goodImageLoading ? 'opacity-0' : 'opacity-100'} rounded-3xl m-2`}
               sizes="(max-width: 768px) 100vw, 50vw"
               onError={() => {
                 setGoodImageError(true);
@@ -523,7 +539,7 @@ const EndOfStorySurvey = ({
               src={badImageError || !badChoice.selectedImageUrl ? '/illustrations/STORY_BAD_CHOICE.svg' : badChoice.selectedImageUrl}
               alt="Bad choice"
               fill
-              className={`object-cover transition-opacity duration-300 ${badImageLoading ? 'opacity-0' : 'opacity-100'}`}
+              className={`object-cover transition-opacity duration-300 ${badImageLoading ? 'opacity-0' : 'opacity-100'} rounded-3xl m-2`}
               sizes="(max-width: 768px) 100vw, 50vw"
               onError={() => {
                 setBadImageError(true);
@@ -577,8 +593,8 @@ const StoryReader = ({
     : screenCategory === 'medium'
       ? 'h-7 w-7'
       : 'h-6 w-6';
-  const leftPositionClass = screenCategory === 'large' ? 'left-6' : screenCategory === 'medium' ? 'left-5' : 'left-3';
-  const rightPositionClass = screenCategory === 'large' ? 'right-6' : screenCategory === 'medium' ? 'right-5' : 'right-3';
+  const leftPositionClass = screenCategory === 'large' ? 'left-10' : screenCategory === 'medium' ? 'left-8' : 'left-5';
+  const rightPositionClass = screenCategory === 'large' ? 'right-10' : screenCategory === 'medium' ? 'right-8' : 'right-5';
   const readerPaddingClass = screenCategory === 'large' ? 'px-12 py-8' : screenCategory === 'medium' ? 'px-8 py-6' : 'px-4 py-4';
 
   const toggleFullscreen = () => {
@@ -689,26 +705,26 @@ const StoryReader = ({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.05 }}
               transition={{ duration: 0.5 }}
-              className="w-full h-full"
+              className="w-full h-full rounded-3xl overflow-hidden"
             >
-              <div className="relative w-full h-full">
+              <div className="relative w-full h-full rounded-3xl overflow-hidden">
                 <ImageUrl
                   src={currentPageData?.selectedImageUrl || '/illustrations/STORY_COVER.svg'}
                   alt="Story cover"
                   fill
-                  className="object-contain transition-opacity duration-300"
+                  className="w-auto h-auto object-contain transition-opacity duration-300 rounded-3xl m-2"
                   sizes="100vw"
                   priority
                 />
-                <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/10 via-transparent to-black/30" />
-                <div className="absolute left-0 right-0 bottom-0 z-10 flex justify-center">
+                {/* <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/10 via-transparent to-black/30" /> */}
+                <div className="absolute left-0 right-10 bottom-0 z-10 flex justify-center">
                   <div className="m-4 mb-8 max-w-3xl w-full bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-6 md:p-10 text-center flex flex-col items-center gap-4">
                     <h1 className="text-4xl md:text-5xl font-bold text-purple-800 mb-2" style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive', textShadow: '2px 2px 4px rgba(0,0,0,0.1)' }} dir={isHebrew(story.title || story.problemDescription) ? 'rtl' : 'ltr'}>{story.title}</h1>
                     {story.problemDescription && (
                       <p className="text-lg md:text-2xl text-gray-700 mb-4" style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrew(story.title || story.problemDescription) ? 'rtl' : 'ltr'}>{story.problemDescription}</p>
                     )}
                     <motion.button
-                      whileHover={{ scale: 1.05 }}
+                      whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleNextPage}
                       className="px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-full shadow-lg text-xl transition-colors"
