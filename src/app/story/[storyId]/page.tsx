@@ -404,7 +404,7 @@ const StoryEnd = ({
             {!hasReadBothPaths ? (
               <>
                 <p className={`${bodyTextClass} text-purple-600 mb-2`} style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>
-                  {isHebrewStory ? 'רוצה לנסות את המסלול השני?' : 'Would you like to try the other path?'}
+                  {isHebrewStory ? 'רוצה לראות מה היה קורה אם...' : 'What if...'}
                 </p>
                 <p className={`${detailTextClass} text-purple-900 mb-4`} style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }} dir={isHebrewStory ? 'rtl' : 'ltr'}>{otherChoice.storyText}</p>
                 <button
@@ -855,12 +855,28 @@ export default function StoryReaderPage() {
     setLoading(true);
     setError(null);
     setStory(null);
-    setCurrentPage(0);
-    setSelectedChoice(undefined);
     setReadPaths(new Set());
     setShowSurvey(false);
     setSurveyCompleted(false);
+
+    const savedProgress = localStorage.getItem(`story-progress-${storyId}`);
+    if (savedProgress) {
+      const { page, choice } = JSON.parse(savedProgress);
+      setCurrentPage(page);
+      setSelectedChoice(choice);
+    } else {
+      setCurrentPage(0);
+      setSelectedChoice(undefined);
+    }
   }, [storyId]);
+
+  // Save progress to localStorage
+  useEffect(() => {
+    if (storyId && !loading) {
+      const progress = { page: currentPage, choice: selectedChoice };
+      localStorage.setItem(`story-progress-${storyId}`, JSON.stringify(progress));
+    }
+  }, [currentPage, selectedChoice, storyId, loading]);
 
   useEffect(() => {
     const fetchStory = async () => {
@@ -1017,6 +1033,11 @@ export default function StoryReaderPage() {
       // Mark survey as completed
       setSurveyCompleted(true);
       setShowSurvey(false);
+      
+      // Clear story progress from localStorage
+      if (storyId) {
+        localStorage.removeItem(`story-progress-${storyId}`);
+      }
 
       // Show success message (no redirect for public story reading)
     } catch (error) {
