@@ -1109,23 +1109,25 @@ const StoryReader = ({
         </>
       )}
       {/* Fullscreen button remains at top right */}
-      <div className="absolute top-4 left-4 z-20">
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => {
-            if (story.id) {
-              localStorage.removeItem(`story-progress-${story.id}`);
-              window.location.reload();
-            }
-          }}
-          className="p-2 px-4 bg-white/20 backdrop-blur-sm hover:bg-white text-purple-600 rounded-full shadow-sm transition-colors"
-        >
-          {isHebrew(story.title || story.problemDescription)
-            ? "התחל מחדש"
-            : "Start New"}
-        </motion.button>
-      </div>
+      {currentPage > 0 && (
+        <div className="absolute top-4 left-4 z-20">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => {
+              if (story.id) {
+                localStorage.removeItem(`story-progress-${story.id}`);
+                window.location.reload();
+              }
+            }}
+            className="p-2 px-4 bg-white/20 backdrop-blur-sm hover:bg-white text-purple-600 rounded-full shadow-sm transition-colors"
+          >
+            {isHebrew(story.title || story.problemDescription)
+              ? "התחל מחדש"
+              : "Start New"}
+          </motion.button>
+        </div>
+      )}
       <div className="absolute top-4 right-4 z-20">
         <motion.button
           whileHover={{ scale: 1.1 }}
