@@ -5,7 +5,7 @@ import { onAuthStateChanged, auth } from "@choiceStoryWeb/firebase";
 import { User } from "firebase/auth";
 import { useTranslation } from "./hooks/useTranslation";
 import { useFirestore } from "./hooks/useFirestore";
-import Image from 'next/image';
+import Image from "next/image";
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
@@ -19,7 +19,7 @@ export default function Home() {
       setUser(null);
       return;
     }
-    
+
     try {
       const unsubscribe = onAuthStateChanged((currentUser) => {
         setUser(currentUser);
@@ -41,9 +41,9 @@ export default function Home() {
         <div className="container">
           <div className="outer__hero fade-in">
             <div className="hero__image">
-              <Image 
-                src="/landing-page-images/heroimage.png" 
-                alt="heroimage" 
+              <Image
+                src="/landing-page-images/heroimage.png"
+                alt="heroimage"
                 width={600}
                 height={450}
                 priority
@@ -73,17 +73,17 @@ export default function Home() {
               <p>{t.story.description}</p>
             </div>
             <div className="story__image">
-              <Image 
-                src="/landing-page-images/storyimage.png" 
-                alt="storyimage" 
+              <Image
+                src="/landing-page-images/storyimage.png"
+                alt="storyimage"
                 width={800}
                 height={500}
               />
             </div>
             <div className="story__small">
-              <Image 
-                src="/landing-page-images/storysmall.png" 
-                alt="storysmall" 
+              <Image
+                src="/landing-page-images/storysmall.png"
+                alt="storysmall"
                 width={400}
                 height={250}
               />
@@ -95,9 +95,9 @@ export default function Home() {
       <div className="desc__block">
         <div className="container">
           <div className="outer__desc fade-in">
-            <Image 
-              src="/landing-page-images/descimage.svg" 
-              alt="descimage" 
+            <Image
+              src="/landing-page-images/descimage.svg"
+              alt="descimage"
               width={600}
               height={400}
             />
@@ -106,9 +106,9 @@ export default function Home() {
               {t.benefits.items.map((item, index) => (
                 <li key={index}>
                   <span>
-                    <Image 
-                      src={`/landing-page-images/desc${index + 1}.svg`} 
-                      alt={`desc${index + 1}`} 
+                    <Image
+                      src={`/landing-page-images/desc${index + 1}.svg`}
+                      alt={`desc${index + 1}`}
                       width={40}
                       height={40}
                     />
