@@ -3,12 +3,12 @@
   "scripts": {
     "generate:dev-functions": "ts-node scripts/generate-dev-functions.ts",
     "deploy:staging-functions": "npm run generate:dev-functions && ./scripts/deploy-staging.sh",
+    "deploy:production-functions": "./scripts/deploy-production.sh",
     "build": "npm run generate:dev-functions && tsc",
     "build:watch": "tsc --watch",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
-    "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
     "test": "jest",
     "test:watch": "jest --watch",

@@ -89,17 +89,39 @@ jobs:
             echo "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}" >> .env.production
             echo "NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}" >> .env.production
             echo "NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}" >> .env.production
+            echo "NEXT_PUBLIC_FIREBASE_ENV=development" >> .env.production
             echo "✅ Root environment file created"
           else
             echo "⚠️  No Firebase config secrets found, skipping .env.production creation"
           fi
       
+      # Clean previous build to ensure fresh build
+      - name: Clean previous build artifacts
+        run: |
+          echo "🧹 Cleaning previous build artifacts..."
+          rm -rf .next
+          echo "✅ Clean complete"
+      
+      # Build Next.js app for staging
+      - name: Build Next.js app for staging
+        run: |
+          echo "🔨 Building Next.js app for staging..."
+          npm run build
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_FIREBASE_ENV: development
+          FIREBASE_ENV: development
+      
       - name: Deploy to Staging Hosting
         run: |
+          echo "🔧 Setting Firebase project..."
           firebase use choicestory-b3135 --token "$FIREBASE_TOKEN"
-          firebase target:apply hosting staging choicestory-b3135-staging --token "$FIREBASE_TOKEN" || echo "⚠️  Target may already be configured"
+          echo "🔧 Applying staging hosting target mapping..."
+          firebase target:apply hosting staging choicestory-b3135-stage --token "$FIREBASE_TOKEN" || echo "⚠️  Target may already be configured"
+          echo "📦 Deploying to staging hosting (site: choicestory-b3135-stage)..."
           firebase deploy --only hosting:staging --token "$FIREBASE_TOKEN"
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          NODE_ENV: development
+          NODE_ENV: production
+          NEXT_PUBLIC_FIREBASE_ENV: development
 
