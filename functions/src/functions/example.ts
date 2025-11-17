@@ -1,5 +1,5 @@
 import * as functions from "firebase-functions/v1";
-import * as admin from "firebase-admin";
+// import * as admin from "firebase-admin";
 import { getDb, getEnvironment, getFirestoreHelper } from "../lib/utils";
 
 /**
