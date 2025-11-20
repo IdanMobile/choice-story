@@ -11,7 +11,7 @@ export default function Home() {
     // Listen for postMessage events from the iframe
     const handleMessage = (event: MessageEvent) => {
       // Log all messages for debugging (remove in production if needed)
-      console.log('Received postMessage:', event.data, 'from origin:', event.origin);
+      // console.log('Received postMessage:', event.data, 'from origin:', event.origin);
       
       // Verify origin for security (adjust if needed)
       // if (event.origin !== 'https://yaronloubaton.wixstudio.com') return;
