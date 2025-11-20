@@ -31,10 +31,10 @@ export default function Dashboard() {
  
   // Fetch kids if they haven't been loaded yet
   useEffect(() => {
-    if (!kidsLoaded && refreshKids) {
+    if (!kidsLoaded && !isLoadingKids && refreshKids) {
       refreshKids();
     }
-  }, [kidsLoaded, refreshKids]);
+  }, [kidsLoaded, isLoadingKids, refreshKids]);
 
   // Determine if we should show loading state
   // Show loading if: currently loading OR we haven't loaded kids yet

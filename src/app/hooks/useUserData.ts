@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import useUserState from '../state/user-state';
 import useKidsState from '../state/kids-state';
 import { useAuth } from '../context/AuthContext';
@@ -53,6 +53,22 @@ export function useUserData() {
     }
   }, [firebaseUser, userData, isFetchingUserData, kidsLastFetched, fetchKids]);
   
+  // Memoize refreshKids to prevent infinite loops
+  const refreshKids = useCallback(() => {
+    if (userData?.uid) {
+      fetchKids(userData.uid);
+    } else {
+      console.warn("refreshKids called without userData.uid");
+    }
+  }, [userData?.uid, fetchKids]);
+  
+  // Memoize refreshUserData to prevent unnecessary re-renders
+  const refreshUserData = useCallback(() => {
+    if (firebaseUser) {
+      fetchUserData(firebaseUser);
+    }
+  }, [firebaseUser, fetchUserData]);
+  
   // Return a combined object with all user and kids data and actions
   return {
     // User and auth data
@@ -70,14 +86,8 @@ export function useUserData() {
     
     // Actions
     updateUser: updateUserInFirestore,
-    refreshUserData: firebaseUser ? () => fetchUserData(firebaseUser) : undefined,
-    refreshKids: () => {
-      if (userData?.uid) {
-        fetchKids(userData.uid);
-      } else {
-        console.warn("refreshKids called without userData.uid");
-      }
-    },
+    refreshUserData: firebaseUser ? refreshUserData : undefined,
+    refreshKids,
     deleteKid: (kidId: string) => deleteKid(kidId),
   };
 }
