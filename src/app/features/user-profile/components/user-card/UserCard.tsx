@@ -432,7 +432,7 @@ export const UserCard: React.FC<UserCardProps> = memo(({
               priority
             />
             {/* Avatar button overlay */}
-            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+            {/* <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -441,7 +441,7 @@ export const UserCard: React.FC<UserCardProps> = memo(({
               >
                 <ImageIcon className="h-4 w-4 text-blue-500" />
               </Button>
-            </div>
+            </div> */}
           </div>
 
           {/* Name and Info */}
