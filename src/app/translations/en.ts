@@ -22,7 +22,10 @@ export const enTranslations: Translation = {
   story: {
     title: "Story",
     description: "Description",
-    readStory: "Read Story"
+    readStory: "Read Story",
+    share: "Share Story",
+    copyLink: "Copy Link",
+    linkCopied: "Link Copied"
   },
   benefits: {
     title: "Benefits",

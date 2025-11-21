@@ -31,27 +31,22 @@ export function useUserData() {
     deleteKid
   } = useKidsState();
   
-  // Auto-fetch user data when firebase user is available
+  // Auto-fetch user and kids data
   useEffect(() => {
+    // Fetch user data if we have a firebase user but no local user data yet
     if (firebaseUser && !userData && !isFetchingUserData) {
       fetchUserData(firebaseUser);
     }
-  }, [firebaseUser, userData, isFetchingUserData, fetchUserData]);
 
-  // Auto-fetch kids when user data changes
-  useEffect(() => {
+    // Fetch kids data if user is loaded and kids data is stale or missing
     const shouldFetchKids =
-      firebaseUser &&
-      userData &&
-      !isFetchingUserData &&
-      userData.uid &&
-      (!kidsLastFetched || Date.now() - kidsLastFetched > 5 * 60 * 1000); // Refetch every 5 minutes
-    
+      userData?.uid &&
+      (!kidsLastFetched || Date.now() - kidsLastFetched > 5 * 60 * 1000); // 5-minute cache
+
     if (shouldFetchKids) {
-      // Pass the account ID to fetch kids
-      fetchKids(userData.uid); // userData.uid is the accountId
+      fetchKids(userData.uid);
     }
-  }, [firebaseUser, userData, isFetchingUserData, kidsLastFetched, fetchKids]);
+  }, [firebaseUser, userData, isFetchingUserData, kidsLastFetched, fetchUserData, fetchKids]);
   
   // Memoize refreshKids to prevent infinite loops
   const refreshKids = useCallback(() => {
