@@ -23,6 +23,9 @@ export interface Translation {
     title: string;
     description: string;
     readStory: string;
+    share: string;
+    copyLink: string;
+    linkCopied: string;
   };
   benefits: {
     title: string;

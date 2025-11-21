@@ -208,6 +208,9 @@ export default function StoryPageComponent() {
 
   if (!story) return <LoadingIndicator />;
 
+  const isMissingImages =
+    currentUser && kid && story.pages.some((page) => !page.selectedImageUrl);
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="mb-8 text-center">
@@ -217,7 +220,7 @@ export default function StoryPageComponent() {
         </p>
 
         {/* Auto Generate Button - missing images */}
-        {currentUser && kid && story.pages.some((page) => !page.selectedImageUrl) && (
+        {isMissingImages && (
           <div className="my-8 flex justify-center">
             <button
               onClick={handleGenerateMissingImages}
@@ -225,6 +228,32 @@ export default function StoryPageComponent() {
               disabled={!story.pages.some((page) => !page.selectedImageUrl)}
             >
               לחצו לייצור תמונות חסרות ✨
+            </button>
+          </div>
+        )}
+
+        {/* 3 Action buttons (Copy, Share, Read) */}
+        {!isMissingImages && (
+          <div className="flex flex-wrap items-center justify-center gap-3 py-8">
+            <button
+              onClick={() => router.push(`/story/${storyId}`)}
+              className="px-6 py-2 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors shadow-md"
+            >
+              {t.story.readStory}
+            </button>
+            <button
+              onClick={handleShareStory}
+              className="px-6 py-2 rounded-md bg-green-600 text-white font-bold hover:bg-green-700 transition-colors shadow-md flex items-center gap-2"
+            >
+              <Share2 size={18} />
+              {t.story.share}
+            </button>
+            <button
+              onClick={handleCopyLink}
+              className="px-6 py-2 rounded-md bg-purple-600 text-white font-bold hover:bg-purple-700 transition-colors shadow-md flex items-center gap-2"
+            >
+              {copied ? <Check size={18} /> : <Copy size={18} />}
+              {copied ? `${t.story.linkCopied}` : `${t.story.copyLink}`}
             </button>
           </div>
         )}
@@ -277,30 +306,6 @@ export default function StoryPageComponent() {
             }}
           />
         ))}
-      </div>
-
-      {/* 3 Action buttons (Copy, Share, Read) */}
-      <div className="flex flex-wrap items-center justify-center gap-3 py-8">
-        <button
-          onClick={() => router.push(`/story/${storyId}`)}
-          className="px-6 py-2 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors shadow-md"
-        >
-          {t.story.readStory}
-        </button>
-        <button
-          onClick={handleShareStory}
-          className="px-6 py-2 rounded-md bg-green-600 text-white font-bold hover:bg-green-700 transition-colors shadow-md flex items-center gap-2"
-        >
-          <Share2 size={18} />
-          Share Story
-        </button>
-        <button
-          onClick={handleCopyLink}
-          className="px-6 py-2 rounded-md bg-purple-600 text-white font-bold hover:bg-purple-700 transition-colors shadow-md flex items-center gap-2"
-        >
-          {copied ? <Check size={18} /> : <Copy size={18} />}
-          {copied ? "Copied!" : "Copy Link"}
-        </button>
       </div>
     </div>
   );

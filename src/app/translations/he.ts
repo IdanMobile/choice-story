@@ -22,7 +22,10 @@ export const heTranslations: Translation = {
   story: {
     title: "סיפור",
     description: "תיאור",
-    readStory: "קרא סיפור"
+    readStory: "קרא סיפור",
+    share: "שתף סיפור",
+    copyLink: "העתק קישור",
+    linkCopied: "הקישור הועתק"
   },
   benefits: {
     title: "יתרונות",

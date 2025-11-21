@@ -10,12 +10,12 @@ import firestoreServerService from "@/app/services/firestore.server";
 export function checkFirestoreReady(req: NextRequest): NextResponse | null {
   if (!firestoreServerService.isReady()) {
     const initError = firestoreServerService.getInitializationError();
-    console.error("[API_ERROR] Firestore service not ready:", initError);
+    console.error("[API_ERROR] Firestore service not ready. Details:", JSON.stringify(initError, null, 2));
     
     Sentry.captureException(new Error(`Firestore service not initialized: ${initError}`), {
-      tags: { 
-        api_endpoint: req.nextUrl.pathname, 
-        method: req.method 
+      tags: {
+        api_endpoint: req.nextUrl.pathname,
+        method: req.method
       },
       extra: { initializationError: initError }
     });
@@ -28,6 +28,7 @@ export function checkFirestoreReady(req: NextRequest): NextResponse | null {
     }, { status: 503 });
   }
   
+  console.log("[API_INFO] Firestore service is ready.");
   return null;
 }
 

@@ -417,8 +417,8 @@ export const UserCard: React.FC<UserCardProps> = memo(({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 relative">
-      <div className="p-5">
+    <div className="bg-white border-gray-200 border rounded-lg shadow-xl p-6 relative transition-transform duration-300 hover:scale-105 w-full max-w-sm">
+      <div className="p-4">
         <div className="flex flex-col items-center mb-4">
           {/* Avatar with reanalyze button overlay */}
           <div className="relative h-40 w-40 rounded-full overflow-hidden mb-3 bg-gray-100 group">
