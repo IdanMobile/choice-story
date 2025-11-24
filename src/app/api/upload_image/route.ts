@@ -12,50 +12,38 @@ if (!isBuildTime) {
   console.log("[UPLOAD_IMAGE] Storage Bucket Name:", bucketName);
 }
 
-// Add a direct HTTP upload fallback that works in any environment
-async function uploadWithDirectHTTP(
-  fileBuffer: Buffer, 
-  filePath: string, 
+// Add a direct upload fallback that works without signed URLs
+async function uploadWithDirectMethod(
+  fileBuffer: Buffer,
+  filePath: string,
   contentType: string,
   bucketName: string
 ): Promise<string> {
-  console.log("[UPLOAD_IMAGE] Using direct HTTP upload fallback");
-  
-  // Ensure the file path doesn't start with a slash
-  const normalizedPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
-  
-  // If bucketName doesn't include .appspot.com, add it
-  const fullBucketName = bucketName.includes('.appspot.com') 
-    ? bucketName 
-    : `${bucketName}.appspot.com`;
-  
-  // Create upload URL
-  // Note: This approach needs proper CORS configuration in your Firebase bucket
-  const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${fullBucketName}/o?name=${encodeURIComponent(normalizedPath)}`;
-  
-  // Upload the file
-  console.log(`[UPLOAD_IMAGE] POSTing to: ${uploadUrl}`);
-  const response = await fetch(uploadUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': contentType,
-      'Cache-Control': 'public,max-age=31536000',
-      'X-Goog-Meta-Source': 'choice-story-app',
-    },
-    body: new Uint8Array(fileBuffer)
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Direct upload failed with status ${response.status}: ${errorText}`);
+  console.log("[UPLOAD_IMAGE] Using direct upload method");
+
+  if (!firebaseAdmin.isReady()) {
+    throw new Error("Firebase Admin SDK is not initialized.");
   }
-  
-  // Build the download URL 
-  // Format: https://firebasestorage.googleapis.com/v0/b/[bucket]/o/[file]?alt=media
-  const downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${fullBucketName}/o/${encodeURIComponent(normalizedPath)}?alt=media`;
-  console.log(`[UPLOAD_IMAGE] Generated download URL: ${downloadUrl}`);
-  
-  return downloadUrl;
+
+  const bucket = firebaseAdmin.getStorage().bucket(bucketName);
+  const file = bucket.file(filePath);
+
+  // Upload the file directly using Admin SDK
+  await file.save(fileBuffer, {
+    metadata: {
+      contentType,
+    },
+    public: true,
+  });
+
+  // Make the file publicly accessible
+  await file.makePublic();
+
+  // Get the public URL of the uploaded file
+  const publicUrl = `https://storage.googleapis.com/${bucketName}/${filePath}`;
+  console.log(`[UPLOAD_IMAGE] Generated public URL: ${publicUrl}`);
+
+  return publicUrl;
 }
 
 // Define validation schema for the request body
@@ -172,14 +160,12 @@ export async function POST(req: NextRequest) {
           public: true,
         });
         
-        // Get the download URL
-        const [signedUrl] = await file.getSignedUrl({
-          action: 'read',
-          expires: '01-01-2100', // Far future date for a long-lived URL
-        });
+        // Make the file publicly accessible
+        await file.makePublic();
         
-        url = signedUrl;
-        console.log("[UPLOAD_IMAGE] Admin SDK upload successful");
+        // Get the public URL (no signing required)
+        url = `https://storage.googleapis.com/${bucketName}/${filePath}`;
+        console.log("[UPLOAD_IMAGE] Admin SDK upload successful:", url);
       } catch (adminError) {
         console.error("[UPLOAD_IMAGE] Admin SDK upload failed:", adminError);
         throw adminError; // Re-throw to try next method
@@ -199,7 +185,7 @@ export async function POST(req: NextRequest) {
       
       console.log("[UPLOAD_IMAGE] Attempting direct HTTP upload");
       try {
-        url = await uploadWithDirectHTTP(fileBuffer, filePath, contentType, bucketName);
+        url = await uploadWithDirectMethod(fileBuffer, filePath, contentType, bucketName);
         console.log("[UPLOAD_IMAGE] Direct HTTP upload successful");
       } catch (httpError) {
         console.error("[UPLOAD_IMAGE] Direct HTTP upload failed:", httpError);
@@ -209,7 +195,7 @@ export async function POST(req: NextRequest) {
         console.log(`[UPLOAD_IMAGE] Attempting last resort with public temp folder: ${tempPath}`);
         
         try {
-          url = await uploadWithDirectHTTP(fileBuffer, tempPath, contentType, bucketName);
+          url = await uploadWithDirectMethod(fileBuffer, tempPath, contentType, bucketName);
           console.log("[UPLOAD_IMAGE] Public temp folder upload successful");
         } catch (finalError) {
           console.error("[UPLOAD_IMAGE] All upload methods failed:", {
