@@ -271,4 +271,27 @@ export const heTranslations: Translation = {
     cancel: "ביטול",
     restart: "התחל מחדש"
   },
+  leaveStory: {
+    title: "לעזוב את הסיפור?",
+    message: "האם אתה בטוח שברצונך לעזוב? ההתקדמות שלך תאבד.",
+    cancel: "להישאר",
+    leave: "לעזוב"
+  },
+  storyReader: {
+    loading: "טוען את הסיפור שלך",
+    error: "אופס! משהו השתבש",
+    choiceQuestion: "מה הבחירה שלך?",
+    theEnd: "הסוף...?",
+    whatIf: "רוצה לראות מה היה קורה אם...",
+    congratsBothPaths: "!כל הכבוד על קריאת שני המסלולים 🎉",
+    whichPathWouldYouChoose: "באיזה דרך הייתם בוחרים?",
+    surveyDescription: "קראתם את שני המסלולים - עכשיו ספרו לנו איזה דרך הייתם בוחרים באמת!",
+    thankYou: "תודה רבה 🎉",
+    choiceSaved: "הבחירה שלך נשמרה",
+    readAgain: "אני רוצה לקרוא שוב",
+    startReading: "התחל לקרוא",
+    gallery: "גלריה",
+    rotateDevice: "סובבו את המכשיר",
+    rotateDeviceMessage: "לחוויית קריאה הטובה ביותר, אנא סובבו את המכשיר למצב אופקי. זה עוזר לנו לשמור על הסיפור סוחף במסכים קטנים יותר."
+  },
 }; 

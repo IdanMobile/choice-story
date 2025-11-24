@@ -249,6 +249,29 @@ export interface Translation {
     cancel: string;
     restart: string;
   };
+  leaveStory: {
+    title: string;
+    message: string;
+    cancel: string;
+    leave: string;
+  };
+  storyReader: {
+    loading: string;
+    error: string;
+    choiceQuestion: string;
+    theEnd: string;
+    whatIf: string;
+    congratsBothPaths: string;
+    whichPathWouldYouChoose: string;
+    surveyDescription: string;
+    thankYou: string;
+    choiceSaved: string;
+    readAgain: string;
+    startReading: string;
+    gallery: string;
+    rotateDevice: string;
+    rotateDeviceMessage: string;
+  };
 }
 
 export type Translations = {

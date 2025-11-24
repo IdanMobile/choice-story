@@ -271,4 +271,27 @@ export const enTranslations: Translation = {
     cancel: "Cancel",
     restart: "Restart"
   },
+  leaveStory: {
+    title: "Leave Story?",
+    message: "Are you sure you want to leave? Your progress will be lost.",
+    cancel: "Stay",
+    leave: "Leave"
+  },
+  storyReader: {
+    loading: "Loading your story",
+    error: "Oops! Something went wrong",
+    choiceQuestion: "What is your choice?",
+    theEnd: "The End!",
+    whatIf: "What if...",
+    congratsBothPaths: "Great job reading both paths! 🎉",
+    whichPathWouldYouChoose: "Which path would you choose?",
+    surveyDescription: "You've read both paths - now tell us which one you would actually choose!",
+    thankYou: "Thank you! 🎉",
+    choiceSaved: "Your choice has been saved!",
+    readAgain: "I want to read again",
+    startReading: "Start Reading",
+    gallery: "Gallery",
+    rotateDevice: "Rotate your device",
+    rotateDeviceMessage: "For the best reading experience, please rotate your device to landscape. This helps us keep the story immersive on smaller screens."
+  },
 }; 
