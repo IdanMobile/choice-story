@@ -41,7 +41,8 @@
         "**/pnpm-lock.yaml"
       ],
       "frameworksBackend": {
-        "region": "us-central1"
+        "region": "us-central1",
+        "memory": "2GB"
       }
     },
     {
@@ -71,7 +72,8 @@
         "**/pnpm-lock.yaml"
       ],
       "frameworksBackend": {
-        "region": "us-central1"
+        "region": "us-central1",
+        "memory": "2GB"
       }
     }
   ],
