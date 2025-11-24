@@ -1126,13 +1126,14 @@ const StoryReader = ({
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={onGalleryClick}
-            className="p-2 px-4 bg-white/20 backdrop-blur-sm break-keep opacity-60 hover:bg-white hover:opacity-100 text-purple-600 rounded-full shadow-sm transition-colors flex items-center gap-2"
+            className="p-3 bg-white/80 backdrop-blur-sm hover:bg-white text-purple-600 rounded-full shadow-lg transition-colors"
+            aria-label="Gallery"
           >
-            <Images className="h-5 w-5" />
-            {translations.gallery}
+            <Images className="h-6 w-6" />
           </motion.button>
         </div>
       )}
+      {/* Top-right buttons */}
       <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
         <motion.button
           whileHover={{ scale: 1.1 }}
@@ -1173,15 +1174,18 @@ const StoryReader = ({
             </svg>
           )}
         </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={onRestartClick}
-          className="p-3 bg-white/80 backdrop-blur-sm hover:bg-white text-purple-600 rounded-full shadow-lg transition-colors"
-          aria-label="Restart story"
-        >
-          <RotateCcw className="h-6 w-6" />
-        </motion.button>
+        {/* Only show restart button after cover page and when story is not finished */}
+        {currentPage > 0 && !showSurvey && !surveyCompleted && (
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={onRestartClick}
+            className="p-3 bg-white/80 backdrop-blur-sm hover:bg-white text-purple-600 rounded-full shadow-lg transition-colors"
+            aria-label="Restart story"
+          >
+            <RotateCcw className="h-6 w-6" />
+          </motion.button>
+        )}
       </div>
     </div>
   );
@@ -1451,6 +1455,24 @@ export default function StoryReaderPage() {
     }
   };
 
+  const handleGalleryClick = () => {
+    // If story is finished (survey completed or showing survey), navigate directly
+    if (showSurvey || surveyCompleted) {
+      handleNavigateToGallery();
+    } else {
+      setShowGalleryModal(true);
+    }
+  };
+
+  const handleRestartClick = () => {
+    // If story is finished (survey completed or showing survey), restart directly
+    if (showSurvey || surveyCompleted) {
+      handleRestartStory();
+    } else {
+      setShowRestartModal(true);
+    }
+  };
+
   // Check if user has read both paths and should see the survey
   useEffect(() => {
     if (readPaths.size === 2 && !surveyCompleted && !showSurvey) {
@@ -1481,8 +1503,8 @@ export default function StoryReaderPage() {
           onSelectFinalChoice={handleSelectFinalChoice}
           surveyCompleted={surveyCompleted}
           screenCategory={screenCategory}
-          onGalleryClick={() => setShowGalleryModal(true)}
-          onRestartClick={() => setShowRestartModal(true)}
+          onGalleryClick={handleGalleryClick}
+          onRestartClick={handleRestartClick}
           translations={{
             choiceQuestion: t.storyReader.choiceQuestion,
             theEnd: t.storyReader.theEnd,
