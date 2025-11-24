@@ -10,7 +10,8 @@ export const heTranslations: Translation = {
     signIn: "התחבר",
     signOut: "התנתק",
     dashboard: "לוח בקרה",
-    account: "חשבון"
+    account: "חשבון",
+    gallery: "גלריה"
   },
   hero: {
     title: "צור סיפורים מותאמים אישית",
@@ -245,5 +246,29 @@ export const heTranslations: Translation = {
           return String(type);
       }
     }
+  },
+  gallery: {
+    title: "גלריה",
+    selectKid: "בחר ילד כדי לצפות בסיפורים שלו",
+    backToKids: "חזרה לילדים",
+    noStoriesYet: "עדיין אין סיפורים לילד הזה",
+    loginPrompt: "אנא התחבר כדי לצפות בגלריה שלך",
+    loginButton: "התחבר עם Google",
+    viewStories: "צפה בסיפורים"
+  },
+  storyActions: {
+    title: "אפשרויות סיפור",
+    read: "קרא סיפור",
+    copyLink: "העתק קישור",
+    share: "שתף סיפור",
+    linkCopiedTitle: "הקישור הועתק!",
+    linkCopiedDescription: "קישור הסיפור הועתק ללוח",
+    copyError: "נכשל בהעתקת הקישור"
+  },
+  restartStory: {
+    title: "להתחיל מחדש?",
+    message: "האם אתה בטוח שברצונך להתחיל מחדש? ההתקדמות שלך תאבד.",
+    cancel: "ביטול",
+    restart: "התחל מחדש"
   },
 }; 

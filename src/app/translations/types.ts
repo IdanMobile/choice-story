@@ -11,6 +11,7 @@ export interface Translation {
     signOut: string;
     dashboard: string;
     account: string;
+    gallery: string;
   };
   hero: {
     title: string;
@@ -223,6 +224,30 @@ export interface Translation {
   };
   storyPageCard: {
     title: (type: PageType) => string;
+  };
+  gallery: {
+    title: string;
+    selectKid: string;
+    backToKids: string;
+    noStoriesYet: string;
+    loginPrompt: string;
+    loginButton: string;
+    viewStories: string;
+  };
+  storyActions: {
+    title: string;
+    read: string;
+    copyLink: string;
+    share: string;
+    linkCopiedTitle: string;
+    linkCopiedDescription: string;
+    copyError: string;
+  };
+  restartStory: {
+    title: string;
+    message: string;
+    cancel: string;
+    restart: string;
   };
 }
 

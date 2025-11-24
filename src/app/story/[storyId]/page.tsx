@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import ImageUrl from "@/app/components/common/ImageUrl";
 import { Story, StoryPage, PageType } from "@/models";
 import { motion, AnimatePresence } from "framer-motion";
 import { StoryApi } from "@/app/network/StoryApi";
+import { RestartStoryModal } from "@/app/components/modals/RestartStoryModal";
 
 type ScreenCategory = "small" | "medium" | "large";
 
@@ -29,6 +30,8 @@ interface StoryReaderProps {
   onSelectFinalChoice: (choice: "good" | "bad") => void;
   surveyCompleted: boolean;
   screenCategory: ScreenCategory;
+  onNavigateToGallery: () => void;
+  onRestartClick: () => void;
 }
 
 // Helper function to detect if text contains Hebrew characters
@@ -733,6 +736,8 @@ const StoryReader = ({
   onSelectFinalChoice,
   surveyCompleted,
   screenCategory,
+  onNavigateToGallery,
+  onRestartClick,
 }: StoryReaderProps) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [overlayDimmed, setOverlayDimmed] = useState(false);
@@ -1108,18 +1113,23 @@ const StoryReader = ({
           </motion.button>
         </>
       )}
-      {/* Fullscreen button remains at top right */}
+      {/* Action buttons at top left */}
       {currentPage > 0 && (
-        <div className="absolute top-4 left-4 z-20">
+        <div className="absolute top-4 left-4 z-20 flex gap-2">
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => {
-              if (story.id) {
-                localStorage.removeItem(`story-progress-${story.id}`);
-                window.location.reload();
-              }
-            }}
+            onClick={onNavigateToGallery}
+            className="p-2 px-4 bg-white/20 backdrop-blur-sm break-keep opacity-60 hover:bg-white hover:opacity-100 text-purple-600 rounded-full shadow-sm transition-colors"
+          >
+            {isHebrew(story.title || story.problemDescription)
+              ? "גלריה"
+              : "Gallery"}
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={onRestartClick}
             className="p-2 px-4 bg-white/20 backdrop-blur-sm break-keep opacity-60 hover:bg-white hover:opacity-100 text-purple-600 rounded-full shadow-sm transition-colors"
           >
             {isHebrew(story.title || story.problemDescription)
@@ -1174,6 +1184,7 @@ const StoryReader = ({
 
 export default function StoryReaderPage() {
   const { storyId } = useParams();
+  const router = useRouter();
   const [story, setStory] = useState<Story | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1186,6 +1197,7 @@ export default function StoryReaderPage() {
   const [surveyCompleted, setSurveyCompleted] = useState(false);
   const [screenCategory, setScreenCategory] = useState<ScreenCategory>("large");
   const [orientationBlocked, setOrientationBlocked] = useState(false);
+  const [showRestartModal, setShowRestartModal] = useState(false);
 
   const shouldForceLandscape = screenCategory !== "large";
   const showOrientationOverlay = shouldForceLandscape && orientationBlocked;
@@ -1412,6 +1424,21 @@ export default function StoryReaderPage() {
     }
   };
 
+  const handleRestartStory = () => {
+    if (story?.id) {
+      localStorage.removeItem(`story-progress-${story.id}`);
+      window.location.reload();
+    }
+  };
+
+  const handleNavigateToGallery = () => {
+    if (story?.kidId) {
+      router.push(`/gallery?kidId=${story.kidId}`);
+    } else {
+      router.push('/gallery');
+    }
+  };
+
   // Check if user has read both paths and should see the survey
   useEffect(() => {
     if (readPaths.size === 2 && !surveyCompleted && !showSurvey) {
@@ -1442,6 +1469,8 @@ export default function StoryReaderPage() {
           onSelectFinalChoice={handleSelectFinalChoice}
           surveyCompleted={surveyCompleted}
           screenCategory={screenCategory}
+          onNavigateToGallery={handleNavigateToGallery}
+          onRestartClick={() => setShowRestartModal(true)}
         />
       </div>
 
@@ -1485,6 +1514,13 @@ export default function StoryReaderPage() {
           </p>
         </div>
       )}
+
+      {/* Restart Story Modal */}
+      <RestartStoryModal
+        isOpen={showRestartModal}
+        onOpenChange={setShowRestartModal}
+        onConfirm={handleRestartStory}
+      />
     </div>
   );
 }

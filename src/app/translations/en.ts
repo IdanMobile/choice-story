@@ -10,7 +10,8 @@ export const enTranslations: Translation = {
     signIn: "Sign In",
     signOut: "Sign Out",
     dashboard: "Dashboard",
-    account: "Account"
+    account: "Account",
+    gallery: "Gallery"
   },
   hero: {
     title: "Create Personalized Stories",
@@ -245,5 +246,29 @@ export const enTranslations: Translation = {
           return String(type);
       }
     }
+  },
+  gallery: {
+    title: "Gallery",
+    selectKid: "Select a kid to view their stories",
+    backToKids: "Back to Kids",
+    noStoriesYet: "No stories yet for this kid",
+    loginPrompt: "Please login to view your gallery",
+    loginButton: "Login with Google",
+    viewStories: "View Stories"
+  },
+  storyActions: {
+    title: "Story Options",
+    read: "Read Story",
+    copyLink: "Copy Link",
+    share: "Share Story",
+    linkCopiedTitle: "Link Copied!",
+    linkCopiedDescription: "Story link has been copied to clipboard",
+    copyError: "Failed to copy link"
+  },
+  restartStory: {
+    title: "Restart Story?",
+    message: "Are you sure you want to restart? Your progress will be lost.",
+    cancel: "Cancel",
+    restart: "Restart"
   },
 }; 
