@@ -20,8 +20,8 @@ export const IS_DEV: boolean = NODE_ENV === ENV_DEV;
  * @returns 'development' or 'production'
  */
 export function getFirebaseEnvironment(): 'development' | 'production' {
-  // Prioritize FIREBASE_ENV if it's explicitly set
-  const firebaseEnv = process.env.FIREBASE_ENV || process.env.NEXT_PUBLIC_FIREBASE_ENV;
+  // Prioritize APP_ENV if it's explicitly set
+  const firebaseEnv = process.env.APP_ENV || process.env.NEXT_PUBLIC_APP_ENV;
   if (firebaseEnv === 'production') {
     return 'production';
   }
@@ -44,7 +44,7 @@ export function getFirebaseEnvironment(): 'development' | 'production' {
         return 'production';
       }
     }
-    // For server-side, if FIREBASE_ENV is not set, default to development
+    // For server-side, if APP_ENV is not set, default to development
     // This prevents accidentally using production data in staging or other environments
     return 'development';
   }

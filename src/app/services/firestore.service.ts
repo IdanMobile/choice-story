@@ -26,7 +26,7 @@ class FirestoreService {
   private environment: string;
 
   constructor() {
-    // Get environment explicitly - must be set via NEXT_PUBLIC_FIREBASE_ENV
+    // Get environment explicitly - must be set via NEXT_PUBLIC_APP_ENV
     this.environment = getFirebaseEnvironment();
     
     try {
