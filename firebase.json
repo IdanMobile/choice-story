@@ -1,10 +1,4 @@
 {
-  "functions": [
-    {
-      "source": "functions",
-      "codebase": "default"
-    }
-  ],
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json",
@@ -40,6 +34,27 @@
         "**/yarn.lock",
         "**/pnpm-lock.yaml"
       ],
+      "cleanUrls": true,
+      "headers": [
+        {
+          "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|js|css|woff|woff2|ttf|otf)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "_next/static/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        }
+      ],
       "frameworksBackend": {
         "region": "us-central1",
         "memory": "4GiB",
@@ -74,6 +89,27 @@
         "**/package-lock.json",
         "**/yarn.lock",
         "**/pnpm-lock.yaml"
+      ],
+      "cleanUrls": true,
+      "headers": [
+        {
+          "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|js|css|woff|woff2|ttf|otf)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "_next/static/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        }
       ],
       "frameworksBackend": {
         "region": "us-central1",
