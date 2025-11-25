@@ -3,7 +3,7 @@
 # 
 # This script:
 # 1. Cleans previous build artifacts (.next folder)
-# 2. Sets environment variables for production (NEXT_PUBLIC_FIREBASE_ENV=production)
+# 2. Sets environment variables for production (NEXT_PUBLIC_APP_ENV=production)
 # 3. Builds Next.js app with production configuration
 # 4. Deploys to Firebase Hosting site: choicestory-b3135
 # 
@@ -46,8 +46,8 @@ echo ""
 
 # Set environment variables for production build
 export NODE_ENV=production
-export NEXT_PUBLIC_FIREBASE_ENV=production
-export FIREBASE_ENV=production
+export NEXT_PUBLIC_APP_ENV=production
+export APP_ENV=production
 
 # Build Next.js app
 echo "🔨 Building Next.js app for production..."

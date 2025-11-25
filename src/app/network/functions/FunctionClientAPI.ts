@@ -17,7 +17,7 @@ import { getFirebaseEnvironment } from '../../../config/build-config';
  * Returns dev{BaseName} if environment is "development", otherwise returns baseName
  * 
  * This uses getFirebaseEnvironment() which checks:
- * 1. NEXT_PUBLIC_FIREBASE_ENV environment variable
+ * 1. NEXT_PUBLIC_APP_ENV environment variable
  * 2. Hostname (staging domains use development functions)
  * 3. NODE_ENV as fallback
  */
