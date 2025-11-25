@@ -3,7 +3,7 @@
 # 
 # This script:
 # 1. Cleans previous build artifacts (.next folder)
-# 2. Sets environment variables for staging (NEXT_PUBLIC_FIREBASE_ENV=development)
+# 2. Sets environment variables for staging (NEXT_PUBLIC_APP_ENV=development)
 # 3. Builds Next.js app with staging configuration
 # 4. Deploys to Firebase Hosting site: choicestory-b3135-stage
 # 
@@ -46,8 +46,8 @@ echo ""
 
 # Set environment variables for staging build
 export NODE_ENV=production
-export NEXT_PUBLIC_FIREBASE_ENV=development
-export FIREBASE_ENV=development
+export NEXT_PUBLIC_APP_ENV=development
+export APP_ENV=development
 
 # Build Next.js app
 echo "🔨 Building Next.js app for staging..."

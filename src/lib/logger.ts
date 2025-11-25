@@ -17,7 +17,7 @@ class Logger {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      this.env = process.env.NEXT_PUBLIC_FIREBASE_ENV || 'development';
+      this.env = process.env.NEXT_PUBLIC_APP_ENV || 'development';
     }
   }
 
