@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { RefreshCw } from 'lucide-react';
 import * as Sentry from "@sentry/nextjs";
+import { Header } from '@/app/components/common/Header';
+import { useAuth } from '@/app/context/AuthContext';
 import useUserData from '../hooks/useUserData';
 import useKidsState from '../state/kids-state';
 import { UserCard } from '../features/user-profile/components/user-card/UserCard';
@@ -12,9 +14,11 @@ import { useTranslation } from '../hooks/useTranslation';
 
 export default function Dashboard() {
   const { t } = useTranslation();
+  const { googleSignIn, loading: authLoading } = useAuth();
   const { 
-    kids, 
-    error, 
+    user,
+    kids,
+    error,
     refreshKids,
     deleteKid,
     kidsLoaded  // This tells us if we've fetched kids data at least once
@@ -24,11 +28,18 @@ export default function Dashboard() {
   const { isLoading: isLoadingKids } = useKidsState();
   
   const router = useRouter();
+ 
+  // Fetch kids if they haven't been loaded yet
+  useEffect(() => {
+    if (user && !kidsLoaded && !isLoadingKids && refreshKids) {
+      refreshKids();
+    }
+  }, [user, kidsLoaded, isLoadingKids, refreshKids]);
 
   // Determine if we should show loading state
   // Show loading if: currently loading OR we haven't loaded kids yet
   const showLoading = isLoadingKids || !kidsLoaded;
-
+ 
   // Track initial load performance
   useEffect(() => {
     if (kids.length > 0 && !isLoadingKids) {
@@ -93,6 +104,7 @@ export default function Dashboard() {
 
   const handleRefresh = () => {
     if (refreshKids) {
+      refreshKids();
       Sentry.startSpan(
         {
           op: "ui.click",
@@ -101,15 +113,33 @@ export default function Dashboard() {
         (span) => {
           span.setAttribute("action", "manual_refresh");
           span.setAttribute("kids_count", kids.length.toString());
-          refreshKids();
         },
       );
     }
   };
 
+  if (!user && !authLoading) {
+    return (
+      <>
+        <Header />
+        <div className="flex flex-col items-center min-h-screen pt-16">
+          <h1 className="text-2xl font-bold mb-4">Please login with Google to view your dashboard</h1>
+          <Button 
+            onClick={googleSignIn}
+            className="rounded-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 transition-all px-8 py-6 text-lg"
+          >
+            Login with Google
+          </Button>
+        </div>
+      </>
+    );
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8 mt-16 max-w-6xl">
-      <div className="flex justify-between items-center mb-8">
+    <>
+      <Header />
+      <div className="container mx-auto px-4 py-8 mt-16 max-w-6xl">
+        <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">{t.dashboard.title}</h1>
         <div className="flex gap-4">
           <Button
@@ -224,5 +254,6 @@ export default function Dashboard() {
         )}
       </div>
     </div>
+    </>
   );
 } 

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import useUserState from '../state/user-state';
 import useKidsState from '../state/kids-state';
 import { useAuth } from '../context/AuthContext';
@@ -31,20 +31,38 @@ export function useUserData() {
     deleteKid
   } = useKidsState();
   
-  // Auto-fetch kids when user data changes
+  // Auto-fetch user and kids data
   useEffect(() => {
-    const shouldFetchKids = 
-      firebaseUser && 
-      userData && 
-      !isFetchingUserData && 
-      userData.uid &&
-      (!kidsLastFetched || Date.now() - kidsLastFetched > 5 * 60 * 1000); // Refetch every 5 minutes
-    
-    if (shouldFetchKids) {
-      // Pass the account ID to fetch kids
-      fetchKids(userData.uid); // userData.uid is the accountId
+    // Fetch user data if we have a firebase user but no local user data yet
+    if (firebaseUser && !userData && !isFetchingUserData) {
+      fetchUserData(firebaseUser);
     }
-  }, [firebaseUser, userData, isFetchingUserData, kidsLastFetched, fetchKids]);
+
+    // Fetch kids data if user is loaded and kids data is stale or missing
+    const shouldFetchKids =
+      userData?.uid &&
+      (!kidsLastFetched || Date.now() - kidsLastFetched > 5 * 60 * 1000); // 5-minute cache
+
+    if (shouldFetchKids) {
+      fetchKids(userData.uid);
+    }
+  }, [firebaseUser, userData, isFetchingUserData, kidsLastFetched, fetchUserData, fetchKids]);
+  
+  // Memoize refreshKids to prevent infinite loops
+  const refreshKids = useCallback(() => {
+    if (userData?.uid) {
+      fetchKids(userData.uid);
+    } else {
+      console.warn("refreshKids called without userData.uid");
+    }
+  }, [userData?.uid, fetchKids]);
+  
+  // Memoize refreshUserData to prevent unnecessary re-renders
+  const refreshUserData = useCallback(() => {
+    if (firebaseUser) {
+      fetchUserData(firebaseUser);
+    }
+  }, [firebaseUser, fetchUserData]);
   
   // Return a combined object with all user and kids data and actions
   return {
@@ -63,8 +81,8 @@ export function useUserData() {
     
     // Actions
     updateUser: updateUserInFirestore,
-    refreshUserData: firebaseUser ? () => fetchUserData(firebaseUser) : undefined,
-    refreshKids: userData ? () => fetchKids(userData.uid) : undefined,
+    refreshUserData: firebaseUser ? refreshUserData : undefined,
+    refreshKids,
     deleteKid: (kidId: string) => deleteKid(kidId),
   };
 }

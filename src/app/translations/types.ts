@@ -23,6 +23,9 @@ export interface Translation {
     title: string;
     description: string;
     readStory: string;
+    share: string;
+    copyLink: string;
+    linkCopied: string;
   };
   benefits: {
     title: string;
@@ -46,6 +49,8 @@ export interface Translation {
     };
   };
   createStory: {
+    title: string;
+    subtitle: string;
     progress: {
       problemDescription: string;
       selectTitle: string;
@@ -112,6 +117,14 @@ export interface Translation {
       continue: string;
       placeholder: string;
       verificationError: string;
+      advantagesLabel: string;
+      advantagesPlaceholder: string;
+      disadvantagesLabel: string;
+      disadvantagesPlaceholder: string;
+      addButton: string;
+      editTitleLabel: string;
+      editTitlePlaceholder: string;
+      editTitleHint: string;
     };
     choices: {
       title: string;
