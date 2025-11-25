@@ -1,5 +1,7 @@
 env:
   # Set this with firebase apphosting:secrets:set
+  - variable: OPENAI_API_KEY
+    secret: openai-api-key
   - variable: NEXT_PUBLIC_GEMINI_API_KEY
     secret: gemini-api-key
   # Get these values from the Firebase console
