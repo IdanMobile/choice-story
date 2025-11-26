@@ -36,7 +36,7 @@ export class FirebaseAdminService {
   private initialize() {
     try {
       const apps = getApps();
-      const env = process.env.FIREBASE_ENV || process.env.NEXT_PUBLIC_FIREBASE_ENV || process.env.NODE_ENV || 'development';
+      const env = process.env.APP_ENV || process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || 'development';
       const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || process.env.NODE_ENV === 'production' && typeof window === 'undefined' && !process.env.FIREBASE_PROJECT_ID;
       
       if (!isBuildTime) {

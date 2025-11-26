@@ -10,7 +10,8 @@ export const enTranslations: Translation = {
     signIn: "Sign In",
     signOut: "Sign Out",
     dashboard: "Dashboard",
-    account: "Account"
+    account: "Account",
+    gallery: "Gallery"
   },
   hero: {
     title: "Create Personalized Stories",
@@ -54,6 +55,8 @@ export const enTranslations: Translation = {
     }
   },
   createStory: {
+    title: "Create a Story",
+    subtitle: "Create a personalized story for {name}",
     progress: {
       problemDescription: "Problem Description",
       selectTitle: "Select Title",
@@ -119,7 +122,15 @@ export const enTranslations: Translation = {
       selectTitle: "Select a Story Title",
       continue: "Continue",
       placeholder: "{name} doesn't like brushing teeth",
-      verificationError: "Please verify the image before continuing."
+      verificationError: "Please verify the image before continuing.",
+      advantagesLabel: "Advantages (Optional)",
+      advantagesPlaceholder: "e.g., Kid will feel calm and happy",
+      disadvantagesLabel: "Disadvantages (Optional)",
+      disadvantagesPlaceholder: "e.g., Kid will feel anxious",
+      addButton: "Add",
+      editTitleLabel: "Edit Selected Title (Optional)",
+      editTitlePlaceholder: "Customize your story title...",
+      editTitleHint: "You can modify the title before generating your story."
     },
     choices: {
       title: "Story Choices",
@@ -235,5 +246,52 @@ export const enTranslations: Translation = {
           return String(type);
       }
     }
+  },
+  gallery: {
+    title: "Gallery",
+    selectKid: "Select a kid to view their stories",
+    backToKids: "Back to Kids",
+    noStoriesYet: "No stories yet for this kid",
+    loginPrompt: "Please login to view your gallery",
+    loginButton: "Login with Google",
+    viewStories: "View Stories"
+  },
+  storyActions: {
+    title: "Story Options",
+    read: "Read Story",
+    copyLink: "Copy Link",
+    share: "Share Story",
+    linkCopiedTitle: "Link Copied!",
+    linkCopiedDescription: "Story link has been copied to clipboard",
+    copyError: "Failed to copy link"
+  },
+  restartStory: {
+    title: "Restart Story?",
+    message: "Are you sure you want to restart? Your progress will be lost.",
+    cancel: "Cancel",
+    restart: "Restart"
+  },
+  leaveStory: {
+    title: "Leave Story?",
+    message: "Are you sure you want to leave? Your progress will be lost.",
+    cancel: "Stay",
+    leave: "Leave"
+  },
+  storyReader: {
+    loading: "Loading your story",
+    error: "Oops! Something went wrong",
+    choiceQuestion: "What is your choice?",
+    theEnd: "The End!",
+    whatIf: "What if...",
+    congratsBothPaths: "Great job reading both paths! 🎉",
+    whichPathWouldYouChoose: "Which path would you choose?",
+    surveyDescription: "You've read both paths - now tell us which one you would actually choose!",
+    thankYou: "Thank you! 🎉",
+    choiceSaved: "Your choice has been saved!",
+    readAgain: "I want to read again",
+    startReading: "Start Reading",
+    gallery: "Gallery",
+    rotateDevice: "Rotate your device",
+    rotateDeviceMessage: "For the best reading experience, please rotate your device to landscape. This helps us keep the story immersive on smaller screens."
   },
 }; 

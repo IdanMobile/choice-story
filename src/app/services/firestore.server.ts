@@ -22,7 +22,7 @@ class FirestoreServerService {
   private initializationError: string | null = null;
 
   constructor() {
-    // Get environment explicitly - must be set via FIREBASE_ENV or NEXT_PUBLIC_FIREBASE_ENV
+    // Get environment explicitly - must be set via APP_ENV or NEXT_PUBLIC_APP_ENV
     this.environment = getFirebaseEnvironment();
     const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || (process.env.NODE_ENV === 'production' && typeof window === 'undefined' && !process.env.FIREBASE_PROJECT_ID);
     
