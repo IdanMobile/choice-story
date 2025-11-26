@@ -115,9 +115,10 @@ export const Header = () => {
   // Check if user has admin access (role must be "admin")
   const hasAdminAccess = userAccountData?.role === "admin";
   
-  // Check access rights for dashboard and gallery (admins get access to everything)
-  const hasWriteAccess = userAccountData?.access_rights === "write" || hasAdminAccess;
-  const hasReadAccess = userAccountData?.access_rights === "read" || hasAdminAccess;
+  // Check role for dashboard and gallery (admins get access to everything)
+  // Write role implies read access (write users can see both dashboard and gallery)
+  const hasWriteAccess = userAccountData?.role === "write" || hasAdminAccess;
+  const hasReadAccess = userAccountData?.role === "read" || userAccountData?.role === "write" || hasAdminAccess;
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-white z-50 shadow-sm">
@@ -158,7 +159,7 @@ export const Header = () => {
                 {hasReadAccess && (
                   <Button 
                     onClick={goToGallery}
-                    variant="ghost"
+                    variant="default"
                   >
                     {t.nav.gallery}
                   </Button>
