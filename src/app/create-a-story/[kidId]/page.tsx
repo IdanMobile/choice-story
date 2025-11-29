@@ -282,7 +282,7 @@ export default function CreateAStoryPage() {
                 title: "Success",
                 description: "Your story has been saved successfully!",
               });
-              router.push(`/stories/${response.data.story.id}`);
+              router.push(`/stories/${response.data.story.id}?autoGenerate=true`);
             } else {
               throw new Error("Failed to save story");
             }
