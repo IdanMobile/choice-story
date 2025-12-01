@@ -24,7 +24,8 @@
     "deploy:staging:hosting": "bash scripts/deploy-staging-hosting.sh",
     "deploy:staging:functions": "firebase use choicestory-b3135 && cd functions && bash scripts/deploy-staging.sh",
     "verify:firebase": "node firebase-config-verification.js",
-    "verify:env": "node verify-dev-environment.js"
+    "verify:env": "node verify-dev-environment.js",
+    "prepare": "husky"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
@@ -77,6 +78,7 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
