@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { FirebaseAnalyticsService } from '@/app/services/firebase-analytics.service';
 
 /**
@@ -6,41 +6,54 @@ import { FirebaseAnalyticsService } from '@/app/services/firebase-analytics.serv
  * 
  * These are thin wrappers around FirebaseAnalyticsService that provide:
  * - React lifecycle integration (useEffect, useCallback)
- * - Automatic cleanup on unmount
+ * - Automatic cleanup
  * - User/story context management
  * 
  * All timing and cost tracking is handled automatically by the service.
- * 
- * @see ../services/ANALYTICS_REFERENCE.md for complete usage guide
  */
 
 /**
  * Hook to track story reading
  * Thin wrapper around FirebaseAnalyticsService with automatic lifecycle management
+ * 
+ * Note: Uses ref to ensure session only starts once, even if storyTitle loads later
  */
 export function useStoryReadingAnalytics(
   storyId: string | null,
   userId: string | null,
   storyTitle?: string
 ) {
-  // Track story reading start/end automatically
+  const sessionStartedRef = useRef(false);
+  const storyTitleRef = useRef(storyTitle);
+  
+  // Update title ref when it changes (for finish tracking)
   useEffect(() => {
-    if (storyId && userId) {
-      FirebaseAnalyticsService.trackReadingStoryStart(storyId, userId, storyTitle);
-
-      return () => {
-        // Track story reading end when component unmounts
-        FirebaseAnalyticsService.trackReadingStoryFinish(storyId, userId, storyTitle);
-      };
+    storyTitleRef.current = storyTitle;
+  }, [storyTitle]);
+  
+  // Manual start (call when user clicks "Start Reading")
+  const trackReadingStart = useCallback(() => {
+    if (storyId && userId && !sessionStartedRef.current) {
+      sessionStartedRef.current = true;
+      FirebaseAnalyticsService.trackReadingStoryStart(storyId, userId, storyTitleRef.current);
     }
-  }, [storyId, userId, storyTitle]);
+  }, [storyId, userId]);
 
-  // Track page view
+  // Track page view (auto-detects final pages)
   const trackPageView = useCallback((pageNum: number, pageType: string) => {
     if (storyId) {
       FirebaseAnalyticsService.trackStoryPageView(storyId, pageNum, pageType);
+      
+      // Auto-detect story completion when reaching GOOD or BAD ending pages
+      if ((pageType === 'good' || pageType === 'bad') && sessionStartedRef.current) {
+        // User reached the ending - finish the story session
+        if (userId) {
+          FirebaseAnalyticsService.trackReadingStoryFinish(storyId, userId, storyTitleRef.current);
+          sessionStartedRef.current = false; // Mark as finished
+        }
+      }
     }
-  }, [storyId]);
+  }, [storyId, userId]);
 
   // Track when user selects a story path
   const trackSelectedPath = useCallback((pathType: 'good' | 'bad', pageNum: number) => {
@@ -50,12 +63,20 @@ export function useStoryReadingAnalytics(
         userId,
         pathType,
         pageNum,
-        storyTitle
+        storyTitleRef.current
       );
     }
-  }, [storyId, userId, storyTitle]);
+  }, [storyId, userId]);
+  
+  // Manual story finish (for explicit completion tracking)
+  const trackStoryFinish = useCallback(() => {
+    if (storyId && userId && sessionStartedRef.current) {
+      FirebaseAnalyticsService.trackReadingStoryFinish(storyId, userId, storyTitleRef.current);
+      sessionStartedRef.current = false;
+    }
+  }, [storyId, userId]);
 
-  return { trackPageView, trackSelectedPath };
+  return { trackReadingStart, trackPageView, trackSelectedPath, trackStoryFinish };
 }
 
 /**
