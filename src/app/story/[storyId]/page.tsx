@@ -10,6 +10,8 @@ import { RestartStoryModal } from "@/app/components/modals/RestartStoryModal";
 import { LeaveStoryModal } from "@/app/components/modals/LeaveStoryModal";
 import { RotateCcw, Images } from "lucide-react";
 import { useLanguage } from "@/app/context/LanguageContext";
+import { useAuth } from "@/app/context/AuthContext";
+import { useStoryReadingAnalytics } from "@/app/hooks/useStoryAnalytics";
 
 type ScreenCategory = "small" | "medium" | "large";
 
@@ -1195,6 +1197,7 @@ export default function StoryReaderPage() {
   const { storyId } = useParams();
   const router = useRouter();
   const { t } = useLanguage();
+  const { currentUser } = useAuth();
   const [story, setStory] = useState<Story | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1207,6 +1210,13 @@ export default function StoryReaderPage() {
   const [surveyCompleted, setSurveyCompleted] = useState(false);
   const [screenCategory, setScreenCategory] = useState<ScreenCategory>("large");
   const [orientationBlocked, setOrientationBlocked] = useState(false);
+
+  // Analytics tracking
+  const { trackSelectedPath } = useStoryReadingAnalytics(
+    String(storyId) || null,
+    currentUser?.uid || null,
+    story?.title
+  );
   const [showRestartModal, setShowRestartModal] = useState(false);
   const [showGalleryModal, setShowGalleryModal] = useState(false);
 
@@ -1396,9 +1406,15 @@ export default function StoryReaderPage() {
   const handleSelectChoice = (choice: "good" | "bad") => {
     setSelectedChoice(choice);
     setCurrentPage(1); // Reset to first page of the selected path
+    
+    // Track story path selection
+    trackSelectedPath(choice, currentPage);
   };
 
   const handleSelectFinalChoice = async (choice: "good" | "bad") => {
+    // Track final choice selection in survey
+    trackSelectedPath(choice, currentPage);
+    
     if (!story || !storyId) return;
 
     try {

@@ -13,6 +13,7 @@ import {
   StoryPageCardHandle,
 } from "@/app/features/story/components/story/StoryPageCard";
 import { useTranslation } from "@/app/hooks/useTranslation";
+import { useStoryReadingAnalytics } from "@/app/hooks/useStoryAnalytics";
 import { toast } from "@/components/ui/use-toast";
 import { Share2, Copy, Check } from "lucide-react";
 import { Header } from "@/app/components/common/Header";
@@ -33,6 +34,13 @@ export default function StoryPageComponent() {
   const [copied, setCopied] = useState(false);
   const storyPageRefs = useRef<Record<string, StoryPageCardHandle | null>>({});
   const autoGenerateTriggered = useRef(false);
+
+  // Analytics tracking
+  const { trackPageView } = useStoryReadingAnalytics(
+    String(storyId) || null,
+    currentUser?.uid || null,
+    story?.title
+  );
 
   // Helper function to create a unique page identifier
   const getPageId = (page: StoryPage) => `${page.pageNum}-${page.pageType}`;

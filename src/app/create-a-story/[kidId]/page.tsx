@@ -4,6 +4,7 @@ import React, { useReducer, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from '@/app/context/AuthContext';
 import { useTranslation } from "@/app/hooks/useTranslation";
+import { useStoryCreationAnalytics } from "@/app/hooks/useStoryAnalytics";
 import { Loader2 } from "lucide-react";
 import { X } from "lucide-react";
 // import ImageUrl from "@/app/components/common/ImageUrl"; // Unused - image generation disabled
@@ -38,6 +39,17 @@ export default function CreateAStoryPage() {
   const { t, isRTL } = useTranslation();
   const { currentUser, loading: authLoading } = useAuth();
   const { accountData } = useAccountState();
+
+  // Analytics tracking
+  const {
+    trackCreationStart,
+    trackTitleGenerationStart,
+    trackTitleGenerationComplete,
+    trackStoryTextGenerationStart,
+    trackStoryTextGenerationComplete,
+    trackCreationComplete,
+    trackCreationError
+  } = useStoryCreationAnalytics(currentUser?.uid || null, kidId);
 
   const [advantagesInput, setAdvantagesInput] = useState("");
   const [disadvantagesInput, setDisadvantagesInput] = useState("");
@@ -223,11 +235,18 @@ export default function CreateAStoryPage() {
             return;
           }
           dispatch({ type: 'SET_GENERATING_TITLES', payload: true });
+          
+          // Track story creation start
+          trackCreationStart(state.problemDescription);
+          
           try {
+            trackTitleGenerationStart();
             await handleGenerateTitles();
+            trackTitleGenerationComplete(state.titles?.length || 0);
             completeStep('problemDescription');
           } catch (error) {
             console.error('Error generating titles:', error);
+            trackCreationError(error instanceof Error ? error.message : "Failed to generate titles");
             toast({
               title: "Error",
               description: error instanceof Error ? error.message : "Failed to generate titles",
@@ -248,8 +267,12 @@ export default function CreateAStoryPage() {
             return;
           }
           dispatch({ type: 'SET_GENERATING_STORY', payload: true });
+          
+          trackStoryTextGenerationStart(state.selectedTitle);
           const generatedPages = await handleGenerateFullStory();
+          
           if (generatedPages) {
+            trackStoryTextGenerationComplete(generatedPages.length, undefined, state.selectedTitle);
             dispatch({ type: 'SET_PAGES', payload: generatedPages });
             completeStep('selectTitle');
 
@@ -278,6 +301,10 @@ export default function CreateAStoryPage() {
             
             if (response?.success && response.data?.story) {
               completeStep('finishStory');
+              
+              // Track story creation completion
+              trackCreationComplete(response.data.story.id, state.selectedTitle || 'Untitled Story');
+              
               toast({
                 title: "Success",
                 description: "Your story has been saved successfully!",
@@ -288,6 +315,7 @@ export default function CreateAStoryPage() {
             }
           } catch (error) {
             console.error('Error saving story:', error);
+            trackCreationError(error instanceof Error ? error.message : "Failed to save story");
             toast({
               title: "Error",
               description: error instanceof Error ? error.message : "An unexpected error occurred while saving the story",
