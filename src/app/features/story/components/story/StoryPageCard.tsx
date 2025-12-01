@@ -7,7 +7,9 @@ import { PageOperationsService } from '@/app/services/page-operations.service';
 import { useAuth } from '@/app/context/AuthContext';
 import { useTranslation } from '@/app/hooks/useTranslation';
 import { useErrorReporting } from '@/app/hooks/useErrorReporting';
+import { useImageGenerationAnalytics } from '@/app/hooks/useStoryAnalytics';
 import { StoryPageImageGenerator } from '@/app/components/common/StoryPageImageGenerator';
+import { calculateImageGenerationCost } from '@/app/utils/openai-cost-calculator';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -49,6 +51,13 @@ export const StoryPageCard = forwardRef<StoryPageCardHandle, StoryPageCardProps>
   const { currentUser } = useAuth();
   const { t } = useTranslation();
   const { recordError } = useErrorReporting();
+  
+  // Analytics tracking for image generation
+  const {
+    trackImageGenerationStart,
+    trackImageGenerationComplete,
+    trackImageGenerationError
+  } = useImageGenerationAnalytics(currentUser?.uid || null, story?.id || null, story?.title);
 
   console.log('[StoryPageCard] State:', {
     isGeneratingImage,
@@ -101,6 +110,12 @@ export const StoryPageCard = forwardRef<StoryPageCardHandle, StoryPageCardProps>
     console.log('[StoryPageCard] Image selected:', imageUrl);
     const updatedPage = { ...page, selectedImageUrl: imageUrl };
     setPage(updatedPage);
+    
+    // Track image generation completion
+    const isRegeneration = !!page.selectedImageUrl;
+    const imageCost = calculateImageGenerationCost('dall-e-3', 'hd', 1);
+    trackImageGenerationComplete(page.pageType, imageCost, isRegeneration);
+    
     onPageUpdate?.(updatedPage, { skipPersist: true });
     setIsGeneratingImage(false);
     setShowGeneratedImages(false);
@@ -110,6 +125,11 @@ export const StoryPageCard = forwardRef<StoryPageCardHandle, StoryPageCardProps>
   const handleImageError = (error: string) => {
     console.error('[StoryPageCard] Image generation error:', error);
     setIsGeneratingImage(false);
+    
+    // Track image generation error
+    const isRegeneration = !!page.selectedImageUrl;
+    trackImageGenerationError(page.pageType, error, isRegeneration);
+    
     recordError(new Error(error), {
       component: 'StoryPageCard',
       action: 'generateImage',
@@ -124,6 +144,10 @@ export const StoryPageCard = forwardRef<StoryPageCardHandle, StoryPageCardProps>
     console.log('[StoryPageCard] Image generation started');
     setIsGeneratingImage(true);
     setShowGeneratedImages(true);
+    
+    // Track image generation start
+    const isRegeneration = !!page.selectedImageUrl;
+    trackImageGenerationStart(page.pageType, isRegeneration);
   };
 
   // Handle generate button click
