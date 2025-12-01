@@ -4,6 +4,7 @@ import React, { useReducer, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from '@/app/context/AuthContext';
 import { useTranslation } from "@/app/hooks/useTranslation";
+import { useStoryCreationAnalytics } from "@/app/hooks/useStoryAnalytics";
 import { Loader2 } from "lucide-react";
 import { X } from "lucide-react";
 // import ImageUrl from "@/app/components/common/ImageUrl"; // Unused - image generation disabled
@@ -29,13 +30,26 @@ import ErrorMessage from "@/app/components/ui/ErrorMessage";
 
 import { StoryStatus, Story, StoryPage, PageType } from "@/models";
 import { ErrorBoundary as _ErrorBoundary } from "@/app/components/ui/ErrorBoundary";
+import useAccountState from "@/app/state/account-state";
 
 export default function CreateAStoryPage() {
   const params = useParams();
   const router = useRouter();
   const kidId = params.kidId as string;
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const { currentUser, loading: authLoading } = useAuth();
+  const { accountData } = useAccountState();
+
+  // Analytics tracking
+  const {
+    trackCreationStart,
+    trackTitleGenerationStart,
+    trackTitleGenerationComplete,
+    trackStoryTextGenerationStart,
+    trackStoryTextGenerationComplete,
+    trackCreationComplete,
+    trackCreationError
+  } = useStoryCreationAnalytics(currentUser?.uid || null, kidId);
 
   const [advantagesInput, setAdvantagesInput] = useState("");
   const [disadvantagesInput, setDisadvantagesInput] = useState("");
@@ -163,6 +177,24 @@ export default function CreateAStoryPage() {
     }
   }, [authLoading, currentUser, router]);
 
+  // Story limit check
+  useEffect(() => {
+    // Only check after kid details and account data are loaded
+    if (!kidLoading && kidDetails && accountData) {
+      const storiesCreated = kidDetails.stories_created || 0;
+      const limit = accountData.story_per_kid_limit;
+
+      if (limit !== undefined && storiesCreated >= limit) {
+        toast({
+          title: "Story Limit Reached",
+          description: `You have reached the maximum of ${limit} stories for this kid. Delete some stories to create new ones.`,
+          variant: "destructive",
+        });
+        router.push('/dashboard');
+      }
+    }
+  }, [kidDetails, accountData, kidLoading, router]);
+
   // Loading states
   if (authLoading || kidLoading) {
     return <LoadingIndicator message={authLoading ? "Checking authentication..." : "Loading kid details..."} />;
@@ -203,11 +235,18 @@ export default function CreateAStoryPage() {
             return;
           }
           dispatch({ type: 'SET_GENERATING_TITLES', payload: true });
+          
+          // Track story creation start
+          trackCreationStart(state.problemDescription);
+          
           try {
+            trackTitleGenerationStart();
             await handleGenerateTitles();
+            trackTitleGenerationComplete(state.titles?.length || 0);
             completeStep('problemDescription');
           } catch (error) {
             console.error('Error generating titles:', error);
+            trackCreationError(error instanceof Error ? error.message : "Failed to generate titles");
             toast({
               title: "Error",
               description: error instanceof Error ? error.message : "Failed to generate titles",
@@ -228,8 +267,12 @@ export default function CreateAStoryPage() {
             return;
           }
           dispatch({ type: 'SET_GENERATING_STORY', payload: true });
+          
+          trackStoryTextGenerationStart(state.selectedTitle);
           const generatedPages = await handleGenerateFullStory();
+          
           if (generatedPages) {
+            trackStoryTextGenerationComplete(generatedPages.length, undefined, state.selectedTitle);
             dispatch({ type: 'SET_PAGES', payload: generatedPages });
             completeStep('selectTitle');
 
@@ -258,16 +301,21 @@ export default function CreateAStoryPage() {
             
             if (response?.success && response.data?.story) {
               completeStep('finishStory');
+              
+              // Track story creation completion
+              trackCreationComplete(response.data.story.id, state.selectedTitle || 'Untitled Story');
+              
               toast({
                 title: "Success",
                 description: "Your story has been saved successfully!",
               });
-              router.push(`/stories/${response.data.story.id}`);
+              router.push(`/stories/${response.data.story.id}?autoGenerate=true`);
             } else {
               throw new Error("Failed to save story");
             }
           } catch (error) {
             console.error('Error saving story:', error);
+            trackCreationError(error instanceof Error ? error.message : "Failed to save story");
             toast({
               title: "Error",
               description: error instanceof Error ? error.message : "An unexpected error occurred while saving the story",
@@ -293,16 +341,16 @@ export default function CreateAStoryPage() {
   };
 
   const getMainActionLabel = () => {
-    if (state.isGeneratingTitles) return "Generating Titles...";
-    if (state.isGeneratingStory) return "Generating Story...";
-    if (state.isSavingStory) return "Saving Story...";
+    if (state.isGeneratingTitles) return t.createStory.buttons.generatingTitles;
+    if (state.isGeneratingStory) return t.createStory.buttons.generatingStory;
+    if (state.isSavingStory) return t.createStory.buttons.savingStory;
 
     switch (currentStep) {
-      case 'problemDescription': return "Generate Story Titles";
-      case 'selectTitle': return "Generate Story";
-      case 'generateCover': return "Continue to Preview";
-      case 'finishStory': return "Save Story";
-      default: return "Continue";
+      case 'problemDescription': return t.createStory.buttons.generateStoryTitles;
+      case 'selectTitle': return t.createStory.buttons.generateStory;
+      case 'generateCover': return t.createStory.buttons.continueToPreview;
+      case 'finishStory': return t.createStory.buttons.saveStory;
+      default: return t.createStory.buttons.continue;
     }
   };
 
@@ -343,7 +391,7 @@ export default function CreateAStoryPage() {
                       <button
                         type="button"
                         onClick={() => handleRemoveAdvantage(index)}
-                        className="ml-1 rounded-full p-0.5 hover:bg-secondary/80"
+                        className={`rounded-full p-0.5 hover:bg-secondary/80 ${isRTL ? 'mr-1' : 'ml-1'}`}
                         aria-label={`Remove advantage ${advantage}`}
                       >
                         <X className="h-3 w-3" />
@@ -375,7 +423,7 @@ export default function CreateAStoryPage() {
                       <button
                         type="button"
                         onClick={() => handleRemoveDisadvantage(index)}
-                        className="ml-1 rounded-full p-0.5 hover:bg-secondary/80"
+                        className={`rounded-full p-0.5 hover:bg-secondary/80 ${isRTL ? 'mr-1' : 'ml-1'}`}
                         aria-label={`Remove disadvantage ${disadvantage}`}
                       >
                         <X className="h-3 w-3" />
@@ -420,16 +468,16 @@ export default function CreateAStoryPage() {
                 className="space-y-2"
               >
                 {state.titles.map((title: string, index: number) => (
-                <div key={index} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-md">
+                <div key={index} className={`flex items-center p-2 hover:bg-gray-50 rounded-md ${isRTL ? 'space-x-reverse flex-row-reverse' : ''} space-x-2`}>
                   <RadioGroupItem value={title} id={`title-${index}`} />
-                  <Label htmlFor={`title-${index}`}>{title}</Label>
+                  <Label htmlFor={`title-${index}`} className="cursor-pointer">{title}</Label>
                 </div>
               ))}
             </RadioGroup>
           ) : (
               state.isGeneratingTitles ? (
-                <p className="text-gray-500 flex items-center">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t.createStory.preview.generating}
+                <p className={`text-gray-500 flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} /> {t.createStory.preview.generating}
               </p>
             ) : (
                 <p className="text-gray-500">No titles generated yet.</p>
@@ -518,8 +566,8 @@ export default function CreateAStoryPage() {
           size="lg"
         >
           {(state.isGeneratingTitles || state.isGeneratingStory || state.isSavingStory) ? (
-            <div className="flex items-center justify-center">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <div className={`flex items-center justify-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
               <span>{getMainActionLabel()}</span>
             </div>
           ) : (

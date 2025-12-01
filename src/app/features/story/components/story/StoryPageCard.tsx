@@ -7,9 +7,11 @@ import { PageOperationsService } from '@/app/services/page-operations.service';
 import { useAuth } from '@/app/context/AuthContext';
 import { useTranslation } from '@/app/hooks/useTranslation';
 import { useErrorReporting } from '@/app/hooks/useErrorReporting';
+import { useImageGenerationAnalytics } from '@/app/hooks/useStoryAnalytics';
 import { StoryPageImageGenerator } from '@/app/components/common/StoryPageImageGenerator';
+import { calculateImageGenerationCost } from '@/app/utils/openai-cost-calculator';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { RefreshCw, Pencil, Check } from 'lucide-react';
 
@@ -25,6 +27,7 @@ type StoryPageCardProps = {
 export type StoryPageCardHandle = {
   triggerGenerateImage: () => void;
   hasImage: () => boolean;
+  isGenerating: () => boolean;
 };
 
 export const StoryPageCard = forwardRef<StoryPageCardHandle, StoryPageCardProps>(function StoryPageCard(
@@ -44,9 +47,17 @@ export const StoryPageCard = forwardRef<StoryPageCardHandle, StoryPageCardProps>
   const [isEditingText, setIsEditingText] = useState(false);
   const [editedText, setEditedText] = useState(initialPage.storyText);
   const [showGeneratedImages, setShowGeneratedImages] = useState(false);
+  const [isHoveringText, setIsHoveringText] = useState(false);
   const { currentUser } = useAuth();
   const { t } = useTranslation();
   const { recordError } = useErrorReporting();
+  
+  // Analytics tracking for image generation
+  const {
+    trackImageGenerationStart,
+    trackImageGenerationComplete,
+    trackImageGenerationError
+  } = useImageGenerationAnalytics(currentUser?.uid || null, story?.id || null, story?.title);
 
   console.log('[StoryPageCard] State:', {
     isGeneratingImage,
@@ -99,6 +110,12 @@ export const StoryPageCard = forwardRef<StoryPageCardHandle, StoryPageCardProps>
     console.log('[StoryPageCard] Image selected:', imageUrl);
     const updatedPage = { ...page, selectedImageUrl: imageUrl };
     setPage(updatedPage);
+    
+    // Track image generation completion
+    const isRegeneration = !!page.selectedImageUrl;
+    const imageCost = calculateImageGenerationCost('dall-e-3', 'hd', 1);
+    trackImageGenerationComplete(page.pageType, imageCost, isRegeneration);
+    
     onPageUpdate?.(updatedPage, { skipPersist: true });
     setIsGeneratingImage(false);
     setShowGeneratedImages(false);
@@ -108,6 +125,11 @@ export const StoryPageCard = forwardRef<StoryPageCardHandle, StoryPageCardProps>
   const handleImageError = (error: string) => {
     console.error('[StoryPageCard] Image generation error:', error);
     setIsGeneratingImage(false);
+    
+    // Track image generation error
+    const isRegeneration = !!page.selectedImageUrl;
+    trackImageGenerationError(page.pageType, error, isRegeneration);
+    
     recordError(new Error(error), {
       component: 'StoryPageCard',
       action: 'generateImage',
@@ -122,6 +144,10 @@ export const StoryPageCard = forwardRef<StoryPageCardHandle, StoryPageCardProps>
     console.log('[StoryPageCard] Image generation started');
     setIsGeneratingImage(true);
     setShowGeneratedImages(true);
+    
+    // Track image generation start
+    const isRegeneration = !!page.selectedImageUrl;
+    trackImageGenerationStart(page.pageType, isRegeneration);
   };
 
   // Handle generate button click
@@ -165,97 +191,21 @@ export const StoryPageCard = forwardRef<StoryPageCardHandle, StoryPageCardProps>
         setShowGeneratedImages(true);
       },
       hasImage: () => Boolean(page.selectedImageUrl),
+      isGenerating: () => isGeneratingImage,
     }),
-    [currentUser, kid, page.selectedImageUrl]
+    [currentUser, kid, page.selectedImageUrl, isGeneratingImage]
   );
 
   return (
-    <Card className="overflow-hidden">
-      {/* Page Type Badge */}
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {/* Edit button on the left */}
-            {currentUser && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleEditToggle}
-                className="h-8 w-8 p-0"
-                title={isEditingText ? "Save changes" : "Edit text"}
-              >
-                {isEditingText ? (
-                  <Check className="h-4 w-4 text-green-600" />
-                ) : (
-                  <Pencil className="h-4 w-4 text-gray-600" />
-                )}
-              </Button>
-            )}
-            <span className={`text-xs px-2 py-1 rounded-full ${getPageTypeColor(page.pageType)}`}>
-              {getPageTypeLabel(page.pageType)} - {page.pageNum}
-            </span>
-          </div>
-          {currentUser && !textOnly && !isEditingText && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRegenerateText}
-              disabled={isRegeneratingText}
-              className="h-8 w-8 p-0"
-              title={t.createStory.choices.regenerateTitle}
-            >
-              {isRegeneratingText ? (
-                <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-            </Button>
-          )}
-        </div>
-      </CardHeader>
+    <Card className="relative mt-4">
+      {/* Page Type Badge - positioned on top right border */}
+      <div className="absolute -top-3 right-4 z-10">
+        <span className={`text-xs px-3 py-1 rounded-full ${getPageTypeColor(page.pageType)} shadow-sm`}>
+          {getPageTypeLabel(page.pageType)} - {page.pageNum}
+        </span>
+      </div>
 
-      <CardContent className="space-y-4">
-        {/* Text Content */}
-        <div className="relative">
-          {isEditingText ? (
-            <div className="space-y-2">
-              <Textarea
-                value={editedText}
-                onChange={(e) => setEditedText(e.target.value)}
-                className={`text-gray-700 resize-none ${textOnly ? 'min-h-[120px]' : 'min-h-[60px]'}`}
-                placeholder="Enter story text..."
-              />
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEditToggle}
-                  className="text-green-600 border-green-600 hover:bg-green-50"
-                >
-                  <Check className="h-4 w-4 mr-1" />
-                  Save
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCancelEdit}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <p className={`text-gray-700 ${textOnly ? 'text-base leading-relaxed' : 'line-clamp-3'} ${isRegeneratingText ? 'opacity-50' : ''}`}>
-              {page.storyText}
-            </p>
-          )}
-          {isRegeneratingText && !isEditingText && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/50">
-              <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-            </div>
-          )}
-        </div>
-
+      <CardContent className="space-y-4 pt-6">
         {/* Image-related content - only show if not textOnly mode */}
         {!textOnly && (
           <>
@@ -332,6 +282,82 @@ export const StoryPageCard = forwardRef<StoryPageCardHandle, StoryPageCardProps>
         )}
           </>
         )}
+
+        {/* Action Buttons - above text */}
+        {currentUser && !isEditingText && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleEditToggle}
+              className="h-8 w-8 p-0"
+              title="Edit text"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            {!textOnly && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRegenerateText}
+                disabled={isRegeneratingText}
+                className="h-8 w-8 p-0"
+                title={t.createStory.choices.regenerateTitle}
+              >
+                {isRegeneratingText ? (
+                  <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Text Content */}
+        <div className="relative">
+          {isEditingText ? (
+            <div className="space-y-2">
+              <Textarea
+                value={editedText}
+                onChange={(e) => setEditedText(e.target.value)}
+                className={`text-gray-700 resize-none ${textOnly ? 'min-h-[120px]' : 'min-h-[60px]'}`}
+                placeholder="Enter story text..."
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEditToggle}
+                  className="text-green-600 border-green-600 hover:bg-green-50"
+                >
+                  <Check className="h-4 w-4 mr-1" />
+                  Save
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancelEdit}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p 
+              className={`text-gray-700 ${textOnly ? 'text-base leading-relaxed' : (isHoveringText ? '' : 'line-clamp-3')} ${isRegeneratingText ? 'opacity-50' : ''} ${!textOnly ? 'cursor-pointer transition-all' : ''}`}
+              onMouseEnter={() => !textOnly && setIsHoveringText(true)}
+              onMouseLeave={() => !textOnly && setIsHoveringText(false)}
+            >
+              {page.storyText}
+            </p>
+          )}
+          {isRegeneratingText && !isEditingText && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/50">
+              <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

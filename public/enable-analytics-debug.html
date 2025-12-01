@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enable Firebase Analytics Debug Mode</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #4285f4;
+            margin-top: 0;
+        }
+        .button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        .button:hover {
+            background: #357ae8;
+        }
+        .button.danger {
+            background: #ea4335;
+        }
+        .button.danger:hover {
+            background: #d33828;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .instructions {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 6px;
+            border-left: 4px solid #4285f4;
+            margin: 20px 0;
+        }
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 10px 0;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        a {
+            color: #4285f4;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .emoji {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">🐛</span>Firebase Analytics Debug Mode</h1>
+        
+        <div id="status"></div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="button" onclick="enableDebug()">
+                ✅ Enable Debug Mode
+            </button>
+            <button class="button danger" onclick="disableDebug()">
+                ❌ Disable Debug Mode
+            </button>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 How to View Events in Real-Time:</h3>
+            <ol>
+                <li>Click <strong>"Enable Debug Mode"</strong> above</li>
+                <li>Go to Firebase Console: <a href="https://console.firebase.google.com/" target="_blank">https://console.firebase.google.com/</a></li>
+                <li>Select your project</li>
+                <li>Click <strong>Analytics</strong> → <strong>DebugView</strong> in the left sidebar</li>
+                <li>Use your app normally (read stories, create stories, generate images)</li>
+                <li>Watch events appear in DebugView <strong>within seconds!</strong></li>
+            </ol>
+        </div>
+
+        <div class="instructions">
+            <h3>🔍 Events You'll See:</h3>
+            <ul>
+                <li><code>reading_story_start</code> - When user opens a story</li>
+                <li><code>reading_story_finish</code> - When user closes a story</li>
+                <li><code>reading_story_selected_path</code> - When user picks good/bad choice</li>
+                <li><code>creating_text_start</code> - Story text generation begins</li>
+                <li><code>creating_text_finish</code> - Story text generation completes</li>
+                <li><code>creating_image_start</code> - Image generation begins</li>
+                <li><code>creating_image_finish</code> - Image generation completes</li>
+                <li><code>openai_cost</code> - API costs tracked</li>
+            </ul>
+        </div>
+
+        <div class="instructions">
+            <h3>💡 Tips:</h3>
+            <ul>
+                <li>Debug mode only works on <strong>localhost</strong> or when manually enabled</li>
+                <li>Events will appear in your browser console with the prefix <code>[Analytics]</code></li>
+                <li>DebugView shows events in real-time (no 24-48 hour delay!)</li>
+                <li>You can filter events in DebugView by name or user</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function checkStatus() {
+            const debugEnabled = localStorage.getItem('firebase_analytics_debug') === 'true';
+            const statusDiv = document.getElementById('status');
+            
+            if (debugEnabled) {
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = '✅ Debug Mode is ENABLED - Events will show in DebugView!';
+            } else {
+                statusDiv.className = 'status warning';
+                statusDiv.innerHTML = '⚠️ Debug Mode is DISABLED - Enable it to see events in real-time';
+            }
+        }
+
+        function enableDebug() {
+            localStorage.setItem('firebase_analytics_debug', 'true');
+            alert('✅ Debug Mode Enabled!\n\nNow go to Firebase Console → Analytics → DebugView\n\nThen use your app and watch events appear in real-time!');
+            checkStatus();
+        }
+
+        function disableDebug() {
+            localStorage.removeItem('firebase_analytics_debug');
+            alert('❌ Debug Mode Disabled\n\nEvents will still be logged but won\'t show in DebugView immediately.');
+            checkStatus();
+        }
+
+        // Check status on page load
+        checkStatus();
+    </script>
+</body>
+</html>
+
