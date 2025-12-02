@@ -250,7 +250,7 @@ const StoryPageComponent = ({
               textShadow: "2px 2px 4px rgba(0,0,0,0.08)",
               wordBreak: "break-word",
             }}
-            dir="ltr"
+            dir={isHebrew(page.storyText) ? "rtl" : "ltr"}
           >
             {getWhiteShadowText(page.storyText)}
           </p>
