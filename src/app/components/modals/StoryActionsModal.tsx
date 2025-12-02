@@ -26,7 +26,7 @@ export const StoryActionsModal: FC<StoryActionsModalProps> = ({
   onOpenChange,
   story,
 }) => {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const [copied, setCopied] = useState(false);
 
@@ -76,7 +76,7 @@ export const StoryActionsModal: FC<StoryActionsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" dir={isRTL ? "rtl" : "ltr"}>
         <DialogHeader>
           <DialogTitle>{t.storyActions.title}</DialogTitle>
           <DialogDescription>
@@ -86,7 +86,7 @@ export const StoryActionsModal: FC<StoryActionsModalProps> = ({
         <div className="flex flex-col gap-3 mt-4">
           <Button
             onClick={handleReadStory}
-            className="w-full flex items-center gap-2"
+            className={`w-full flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
             size="lg"
           >
             <BookOpen size={20} />
@@ -95,7 +95,7 @@ export const StoryActionsModal: FC<StoryActionsModalProps> = ({
           <Button
             onClick={handleShareStory}
             variant="outline"
-            className="w-full flex items-center gap-2"
+            className={`w-full flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
             size="lg"
           >
             <Share2 size={20} />
@@ -104,7 +104,7 @@ export const StoryActionsModal: FC<StoryActionsModalProps> = ({
           <Button
             onClick={handleCopyLink}
             variant="outline"
-            className="w-full flex items-center gap-2"
+            className={`w-full flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
             size="lg"
           >
             {copied ? <Check size={20} /> : <Copy size={20} />}
