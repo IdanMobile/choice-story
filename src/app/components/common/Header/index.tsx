@@ -133,7 +133,7 @@ export const Header = () => {
             <Link href="/" prefetch={true} className="relative">
               <div className="w-[140px] h-[84px]">
                 <Image
-                  src="/landing-page-images/logo.svg"
+                  src="/landing-page-images/logo-v2.svg"
                   alt="Choice Story"
                   fill
                   style={{ objectFit: 'cover' }}
@@ -221,7 +221,7 @@ export const Header = () => {
                         className="hover:opacity-80 transition-opacity"
                       >
                         <Image 
-                          src="/landing-page-images/logo.svg" 
+                          src="/landing-page-images/logo-v2.svg" 
                           alt="Choice Story" 
                           width={220}
                           height={84}
