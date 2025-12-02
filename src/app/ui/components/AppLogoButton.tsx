@@ -8,7 +8,7 @@ export default function Logo() {
       <Link href="/">
       <Image
           className="dark:invert"
-          src="/logo.svg"
+          src="/landing-page-images/logo-v2.svg"
           alt="ChoiceStory logo"
           width={180}
           height={48}
