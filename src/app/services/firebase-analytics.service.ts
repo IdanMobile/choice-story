@@ -33,9 +33,7 @@ interface ImageGenerationData {
  * - Session-based cost accumulation
  * - Automatic cleanup and memory management
  * 
- * @see ANALYTICS_REFERENCE.md for complete usage guide and event reference
- * 
- * Quick Start:
+ * Usage:
  * - Use hooks in React components: useStoryCreationAnalytics, useStoryReadingAnalytics, useImageGenerationAnalytics
  * - Use service directly in API routes and server-side code
  * - Call startXxx() before operations, trackXxx() after operations

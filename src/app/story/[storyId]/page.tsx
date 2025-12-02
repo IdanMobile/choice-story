@@ -1212,7 +1212,7 @@ export default function StoryReaderPage() {
   const [orientationBlocked, setOrientationBlocked] = useState(false);
 
   // Analytics tracking
-  const { trackSelectedPath } = useStoryReadingAnalytics(
+  const { trackReadingStart, trackSelectedPath, trackStoryFinish } = useStoryReadingAnalytics(
     String(storyId) || null,
     currentUser?.uid || null,
     story?.title
@@ -1363,6 +1363,14 @@ export default function StoryReaderPage() {
 
   const handleNextPage = () => {
     if (!story) return;
+    
+    // Track reading start when moving from cover page (page 0) to first page
+    console.log('currentPage === 0', currentPage === 0);
+    if (currentPage === 0) {
+      trackReadingStart();
+    } if (currentPage === story.pages.length) {
+      trackStoryFinish();
+    }
 
     if (!selectedChoice) {
       // In normal pages
@@ -1401,6 +1409,7 @@ export default function StoryReaderPage() {
 
   const handleFinish = () => {
     // No redirect for public story reading
+    console.log('handleFinish called');
   };
 
   const handleSelectChoice = (choice: "good" | "bad") => {
@@ -1489,13 +1498,21 @@ export default function StoryReaderPage() {
     }
   };
 
+
+  useEffect(() => {
+    console.log('surveyCompleted', surveyCompleted);
+    if (surveyCompleted) {
+      trackStoryFinish();
+    } 
+  }, [surveyCompleted, trackStoryFinish]);
+  
   // Check if user has read both paths and should see the survey
   useEffect(() => {
     if (readPaths.size === 2 && !surveyCompleted && !showSurvey) {
       // Small delay to show the end screen first
       setTimeout(() => {
         setShowSurvey(true);
-      }, 1500);
+      }, 500);
     }
   }, [readPaths, surveyCompleted, showSurvey]);
 
