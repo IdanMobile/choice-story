@@ -10,6 +10,8 @@ import { RestartStoryModal } from "@/app/components/modals/RestartStoryModal";
 import { LeaveStoryModal } from "@/app/components/modals/LeaveStoryModal";
 import { RotateCcw, Images } from "lucide-react";
 import { useLanguage } from "@/app/context/LanguageContext";
+import { useAuth } from "@/app/context/AuthContext";
+import { useStoryReadingAnalytics } from "@/app/hooks/useStoryAnalytics";
 
 type ScreenCategory = "small" | "medium" | "large";
 
@@ -248,7 +250,7 @@ const StoryPageComponent = ({
               textShadow: "2px 2px 4px rgba(0,0,0,0.08)",
               wordBreak: "break-word",
             }}
-            dir="ltr"
+            dir={isHebrew(page.storyText) ? "rtl" : "ltr"}
           >
             {getWhiteShadowText(page.storyText)}
           </p>
@@ -1195,6 +1197,7 @@ export default function StoryReaderPage() {
   const { storyId } = useParams();
   const router = useRouter();
   const { t } = useLanguage();
+  const { currentUser } = useAuth();
   const [story, setStory] = useState<Story | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1207,6 +1210,13 @@ export default function StoryReaderPage() {
   const [surveyCompleted, setSurveyCompleted] = useState(false);
   const [screenCategory, setScreenCategory] = useState<ScreenCategory>("large");
   const [orientationBlocked, setOrientationBlocked] = useState(false);
+
+  // Analytics tracking
+  const { trackReadingStart, trackSelectedPath, trackStoryFinish } = useStoryReadingAnalytics(
+    String(storyId) || null,
+    currentUser?.uid || null,
+    story?.title
+  );
   const [showRestartModal, setShowRestartModal] = useState(false);
   const [showGalleryModal, setShowGalleryModal] = useState(false);
 
@@ -1353,6 +1363,14 @@ export default function StoryReaderPage() {
 
   const handleNextPage = () => {
     if (!story) return;
+    
+    // Track reading start when moving from cover page (page 0) to first page
+    console.log('currentPage === 0', currentPage === 0);
+    if (currentPage === 0) {
+      trackReadingStart();
+    } if (currentPage === story.pages.length) {
+      trackStoryFinish();
+    }
 
     if (!selectedChoice) {
       // In normal pages
@@ -1391,14 +1409,21 @@ export default function StoryReaderPage() {
 
   const handleFinish = () => {
     // No redirect for public story reading
+    console.log('handleFinish called');
   };
 
   const handleSelectChoice = (choice: "good" | "bad") => {
     setSelectedChoice(choice);
     setCurrentPage(1); // Reset to first page of the selected path
+    
+    // Track story path selection
+    trackSelectedPath(choice, currentPage);
   };
 
   const handleSelectFinalChoice = async (choice: "good" | "bad") => {
+    // Track final choice selection in survey
+    trackSelectedPath(choice, currentPage);
+    
     if (!story || !storyId) return;
 
     try {
@@ -1473,13 +1498,21 @@ export default function StoryReaderPage() {
     }
   };
 
+
+  useEffect(() => {
+    console.log('surveyCompleted', surveyCompleted);
+    if (surveyCompleted) {
+      trackStoryFinish();
+    } 
+  }, [surveyCompleted, trackStoryFinish]);
+  
   // Check if user has read both paths and should see the survey
   useEffect(() => {
     if (readPaths.size === 2 && !surveyCompleted && !showSurvey) {
       // Small delay to show the end screen first
       setTimeout(() => {
         setShowSurvey(true);
-      }, 1500);
+      }, 500);
     }
   }, [readPaths, surveyCompleted, showSurvey]);
 

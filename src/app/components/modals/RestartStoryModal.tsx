@@ -23,7 +23,7 @@ export const RestartStoryModal: FC<RestartStoryModalProps> = ({
   onOpenChange,
   onConfirm,
 }) => {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
 
   const handleConfirm = () => {
     onConfirm();
@@ -32,7 +32,7 @@ export const RestartStoryModal: FC<RestartStoryModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" dir={isRTL ? "rtl" : "ltr"}>
         <DialogHeader>
           <DialogTitle>{t.restartStory.title}</DialogTitle>
           <DialogDescription>
