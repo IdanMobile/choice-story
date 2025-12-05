@@ -235,13 +235,7 @@ export default function GalleryPage() {
           <>
             {allKids.length === 0 ? (
               <div className="text-center py-12 px-6 bg-white rounded-xl shadow-sm">
-                <p className="text-gray-500 mb-8">{t.dashboard.noKids}</p>
-                <Button
-                  onClick={() => router.push("/create-a-kid")}
-                  className="rounded-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 transition-all px-8"
-                >
-                  {t.dashboard.addKid}
-                </Button>
+                <p className="text-gray-500">No kids yet</p>
               </div>
             ) : (
               <div className="space-y-8">
