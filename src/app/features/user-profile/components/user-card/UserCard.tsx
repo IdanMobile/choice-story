@@ -268,7 +268,6 @@ const ShareKidDialog: FC<{
   onOpenChange: (isOpen: boolean) => void;
   kidId: string;
   kidName: string;
-  currentUser: { uid: string; email?: string | null; displayName?: string | null } | null;
   t: {
     userCard: {
       shareDialog: {
@@ -290,7 +289,6 @@ const ShareKidDialog: FC<{
   onOpenChange,
   kidId,
   kidName,
-  currentUser,
   t,
 }) => {
   const [email, setEmail] = useState('');
@@ -318,17 +316,19 @@ const ShareKidDialog: FC<{
       return;
     }
 
-    if (!currentUser) {
-      setError('User not authenticated');
-      return;
-    }
-
     setIsSharing(true);
     
     try {
       // Get auth token for API call
       const auth = getAuth();
-      const token = await auth.currentUser?.getIdToken();
+      
+      if (!auth.currentUser) {
+        setError('User not authenticated');
+        setIsSharing(false);
+        return;
+      }
+      
+      const token = await auth.currentUser.getIdToken();
       
       if (!token) {
         setError('Failed to get authentication token');
@@ -826,7 +826,6 @@ export const UserCard: React.FC<UserCardProps> = memo(({
         onOpenChange={setShowShareDialog}
         kidId={kid.id}
         kidName={kidName}
-        currentUser={currentUser}
         t={t}
       />
     </div>
