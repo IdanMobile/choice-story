@@ -13,6 +13,9 @@ export interface Translation {
     account: string;
     gallery: string;
     adminPanel: string;
+    newProfile: string;
+    library: string;
+    management: string;
   };
   hero: {
     title: string;
