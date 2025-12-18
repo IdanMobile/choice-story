@@ -190,6 +190,18 @@ export const enTranslations: Translation = {
       originalImage: "Original Image",
       selectedAvatar: "Currently Selected Avatar",
     },
+    shareDialog: {
+      title: "Share Kid",
+      description: "Share this kid's stories with another account",
+      emailLabel: "Email Address",
+      emailPlaceholder: "Enter email to share with",
+      shareButton: "Share",
+      sharing: "Sharing...",
+      alreadyShared: "Kid is already shared with this email",
+      shareSuccess: "Kid shared with {email}",
+      shareError: "Failed to share kid",
+      invalidEmail: "Please enter a valid email address",
+    },
     toasts: {
       analysisCompleteTitle: "Analysis Complete",
       analysisCompleteDescription: "The image analysis has been updated successfully.",
@@ -208,6 +220,7 @@ export const enTranslations: Translation = {
     stories: "stories",
     createStory: "Create Story",
     delete: "Delete",
+    share: "Share",
     storiesTitle: "Stories",
     refreshStories: "Refresh stories",
     noStoriesFound: "No stories found. Tap to reload.",
@@ -268,7 +281,8 @@ export const enTranslations: Translation = {
     noStoriesYet: "No stories yet for this kid",
     loginPrompt: "Please login to view your gallery",
     loginButton: "Login with Google",
-    viewStories: "View Stories"
+    viewStories: "View Stories",
+    sharedWithMe: "Shared with me"
   },
   storyActions: {
     title: "Story Options",
