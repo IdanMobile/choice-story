@@ -11,6 +11,7 @@ import useUserData from '../hooks/useUserData';
 import useKidsState from '../state/kids-state';
 import { UserCard } from '../features/user-profile/components/user-card/UserCard';
 import { useTranslation } from '../hooks/useTranslation';
+import { LoginForm } from '../components/auth/LoginForm';
 import { Account } from '@/models';
 import {
   Dialog,
