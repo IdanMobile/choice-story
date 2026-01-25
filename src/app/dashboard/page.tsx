@@ -216,18 +216,19 @@ export default function Dashboard() {
     <>
       <Header />
       <div className="container mx-auto px-4 py-8 mt-16 max-w-6xl">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">{t.dashboard.title}</h1>
+        <div className="flex justify-between items-end mb-8">
+          {/* <h1 className="text-3xl font-bold text-gray-800">{t.dashboard.title}</h1> */}
+          <div></div>
           <div className="flex gap-4">
             <Button
               variant="outline"
               size="icon"
               onClick={handleRefresh}
               disabled={isLoadingKids}
-              className={`${isLoadingKids ? 'animate-spin' : ''} rounded-full`}
+              className={`${isLoadingKids ? 'animate-spin' : ''} rounded-full h-12 w-12`}
               aria-label="Refresh"
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className="h-8 w-8" />
             </Button>
             {/* <Button
               id='add-kid-button-top-left'
