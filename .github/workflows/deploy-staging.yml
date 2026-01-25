@@ -97,6 +97,7 @@ jobs:
           NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
           NEXT_PUBLIC_APP_ENV=development
           APP_ENV=development
+          NEXT_PUBLIC_REMOTE_CONFIG_ENV=staging
           ENV_EOF
           
           # Create .env.production for build time
@@ -120,6 +121,7 @@ jobs:
           NODE_ENV: production
           NEXT_PUBLIC_APP_ENV: development
           APP_ENV: development
+          NEXT_PUBLIC_REMOTE_CONFIG_ENV: staging
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       
       - name: Deploy to Staging Hosting
@@ -134,5 +136,6 @@ jobs:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           NODE_ENV: production
           NEXT_PUBLIC_APP_ENV: development
+          NEXT_PUBLIC_REMOTE_CONFIG_ENV: staging
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
