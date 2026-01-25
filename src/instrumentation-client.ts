@@ -21,8 +21,21 @@ process.emitWarning = (warning, ..._args) => {
 
 import * as Sentry from "@sentry/nextjs";
 
+// Disable Sentry on localhost/development unless explicitly enabled
+const isLocalhost = typeof window !== 'undefined' && (
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1' ||
+  window.location.hostname === '0.0.0.0'
+);
+
+const isDevelopment = process.env.NODE_ENV === 'development';
+const forceEnableSentry = process.env.NEXT_PUBLIC_SENTRY_ENABLED === 'true';
+
 Sentry.init({
   dsn: "https://6f263f9d9c29dbbab7cde40a9e25c7f4@o536995.ingest.us.sentry.io/4509769764175872",
+
+  // Disable Sentry on localhost/development unless NEXT_PUBLIC_SENTRY_ENABLED=true
+  enabled: forceEnableSentry || (!isLocalhost && !isDevelopment),
 
   // Add optional integrations for additional features
   integrations: [

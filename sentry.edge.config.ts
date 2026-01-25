@@ -5,8 +5,15 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+// Disable Sentry on development unless explicitly enabled
+const isDevelopment = process.env.NODE_ENV === 'development';
+const forceEnableSentry = process.env.SENTRY_ENABLED === 'true';
+
 Sentry.init({
   dsn: "https://6f263f9d9c29dbbab7cde40a9e25c7f4@o536995.ingest.us.sentry.io/4509769764175872",
+
+  // Disable Sentry on localhost/development unless SENTRY_ENABLED=true
+  enabled: forceEnableSentry || !isDevelopment,
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 1,
