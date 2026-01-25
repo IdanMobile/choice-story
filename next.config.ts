@@ -35,6 +35,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
     NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV || process.env.APP_ENV || 'production',
     NEXT_PUBLIC_GEMINI_API_KEY: process.env.NEXT_PUBLIC_GEMINI_API_KEY,
+    NEXT_PUBLIC_REMOTE_CONFIG_ENV: process.env.NEXT_PUBLIC_REMOTE_CONFIG_ENV || "production" ,
   },
   images: {
     remotePatterns: [

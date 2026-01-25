@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import useCreateKidState from "./state/create-kid-state";
 import KidDetailsContent from "../create-a-kid/components/KidDetailsContent";
 import ImageUploadContent from "../create-a-kid/components/ImageUploadContent";
@@ -155,6 +155,12 @@ export default function CreateAKidPage() {
     setActiveStep(index);
   };
 
+  const handleClose = () => {
+    // Reset the create-kid state before navigating away
+    useCreateKidState.getState().reset();
+    router.push('/dashboard');
+  };
+
   const handleSaveKid = async () => {
     if (!currentUser || !kidDetails?.name || !kidDetails?.gender || !kidDetails?.age || !currentImageUrl || !imageRequirements?.isValid) {
       setError(t.createKid.error.incomplete);
@@ -234,7 +240,16 @@ export default function CreateAKidPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8 relative">
+        {/* Close button */}
+        <button
+          onClick={handleClose}
+          className="absolute top-4 right-4 rtl:right-auto rtl:left-4 w-10 h-10 rounded-full bg-white hover:bg-gray-100 border border-gray-200 shadow-sm flex items-center justify-center transition-colors"
+          aria-label="Close"
+        >
+          <X className="w-5 h-5 text-gray-600" />
+        </button>
+
         <h1 className="text-2xl font-bold mb-6 text-center">
           {t.createKid.title}
         </h1>

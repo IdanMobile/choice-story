@@ -8,10 +8,10 @@ import useKidsState from "@/app/state/kids-state";
 import { useTranslation } from "@/app/hooks/useTranslation";
 import { Header } from "@/app/components/common/Header";
 import { StoryApi } from "@/app/network/StoryApi";
-import { Story, KidDetails } from "@/models";
+import { Story } from "@/models";
 import { StoryActionsModal } from "@/app/components/modals/StoryActionsModal";
 import ImageUrl from "@/app/components/common/ImageUrl";
-import { ArrowLeft } from "lucide-react";
+import { X } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function GalleryPage() {
@@ -130,25 +130,29 @@ export default function GalleryPage() {
       <Header />
       <div className="container mx-auto px-4 py-8 mt-16 max-w-6xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            {selectedKidId && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleBackToKids}
-                className="rounded-full"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
+        <div className="relative flex items-center justify-center mb-8">
+          {/* Centered Title */}
+          <h1 className="text-3xl font-bold text-gray-800 text-center">
+            {selectedKidId ? (
+              <div className="flex flex-col items-center">
+                <span>{t.gallery.storiesOf}</span>
+                <span>{selectedKid?.name || t.userCard.unnamedKid}</span>
+              </div>
+            ) : (
+              t.gallery.title
             )}
-            <h1 className="text-3xl font-bold text-gray-800">
-              {selectedKidId 
-                ? `${selectedKid?.name || t.userCard.unnamedKid} - ${t.userCard.storiesTitle}`
-                : t.gallery.title
-              }
-            </h1>
-          </div>
+          </h1>
+          
+          {/* Close Button - Absolute Left */}
+          {selectedKidId && (
+            <button
+              onClick={handleBackToKids}
+              className="absolute left-0 w-10 h-10 rounded-full bg-white hover:bg-gray-100 border border-gray-200 shadow-sm flex items-center justify-center transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5 text-gray-600" />
+            </button>
+          )}
         </div>
 
         {/* Kids View */}

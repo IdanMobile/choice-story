@@ -1,17 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import ImageUrl from "@/app/components/common/ImageUrl";
-import { Story, StoryPage, PageType } from "@/models";
+import { Story, StoryPage, PageType, KidDetails } from "@/models";
 import { motion, AnimatePresence } from "framer-motion";
 import { StoryApi } from "@/app/network/StoryApi";
 import { RestartStoryModal } from "@/app/components/modals/RestartStoryModal";
 import { LeaveStoryModal } from "@/app/components/modals/LeaveStoryModal";
 import { RotateCcw, Images } from "lucide-react";
 import { useLanguage } from "@/app/context/LanguageContext";
+import { useTranslation } from "@/app/hooks/useTranslation";
 import { useAuth } from "@/app/context/AuthContext";
+import useKidsState from "@/app/state/kids-state";
+import {
+  StoryPageCard,
+  StoryPageCardHandle,
+} from "@/app/features/story/components/story/StoryPageCard";
 import { useStoryReadingAnalytics } from "@/app/hooks/useStoryAnalytics";
+import useStoryState from "@/app/state/story-state";
+import { toast } from "@/components/ui/use-toast";
 
 type ScreenCategory = "small" | "medium" | "large";
 
@@ -192,14 +200,14 @@ const StoryPageComponent = ({
 
   return (
     <div
-      className="relative w-full h-full min-h-screen min-w-screen overflow-hidden select-none"
+      className="relative w-full h-full min-h-screen min-w-screen overflow-hidden select-none px-16 py-0 md:px-16 md:py-0 flex items-center justify-center"
       tabIndex={0}
       style={{ touchAction: "manipulation" }}
     >
       {/* Full-page image background */}
-      <div className="absolute inset-0 w-full h-full z-0">
+      <div className="relative w-full h-full max-h-[calc(100vh-1rem)] md:max-h-[calc(100vh-2rem)] z-0 rounded-3xl overflow-hidden">
         {imageLoading && (
-          <div className="absolute inset-0 bg-purple-100 animate-pulse flex items-center justify-center">
+          <div className="absolute inset-0 bg-purple-100 animate-pulse flex items-center justify-center rounded-3xl">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -215,9 +223,9 @@ const StoryPageComponent = ({
           }
           alt={`Illustration for page ${page.pageNum}`}
           fill
-          className={`object-contain transition-opacity duration-300 ${
+          className={`object-cover transition-opacity duration-300 ${
             imageLoading ? "opacity-0" : "opacity-100"
-          } rounded-3xl m-2`}
+          }`}
           sizes="100vw"
           priority
           onError={() => {
@@ -233,7 +241,7 @@ const StoryPageComponent = ({
         initial={{ opacity: 0.98 }}
         animate={{ opacity: overlayDimmed ? 0.01 : 0.98 }}
         transition={{ duration: 0.3 }}
-        className="absolute left-0 right-0 bottom-0 z-10 flex justify-center"
+        className="absolute left-4 right-4 md:left-8 md:right-8 bottom-4 md:bottom-8 z-10 flex justify-center"
         style={{ pointerEvents: "none" }}
       >
         <div
@@ -444,7 +452,9 @@ const ChoiceSelection = ({
 
 const StoryEnd = ({
   onTryOtherPath,
-  otherChoice,
+  goodChoice,
+  badChoice,
+  selectedChoice,
   hasReadBothPaths,
   story,
   screenCategory,
@@ -453,7 +463,9 @@ const StoryEnd = ({
   congratsBothPaths,
 }: {
   onTryOtherPath: () => void;
-  otherChoice: StoryPage;
+  goodChoice: StoryPage;
+  badChoice: StoryPage;
+  selectedChoice: "good" | "bad";
   hasReadBothPaths: boolean;
   story: Story;
   screenCategory: ScreenCategory;
@@ -461,117 +473,217 @@ const StoryEnd = ({
   whatIf: string;
   congratsBothPaths: string;
 }) => {
+  const [goodImageError, setGoodImageError] = useState(false);
+  const [badImageError, setBadImageError] = useState(false);
+  const [goodImageLoading, setGoodImageLoading] = useState(true);
+  const [badImageLoading, setBadImageLoading] = useState(true);
+
   const isHebrewStory = isHebrew(story.title || story.problemDescription);
-  const containerDirection =
-    screenCategory === "small" ? "flex-col" : "flex-row";
-  const imageSectionClasses =
-    screenCategory === "small"
-      ? "w-full p-6 flex items-center justify-center relative bg-gradient-to-br from-white/90 to-yellow-100 rounded-t-2xl"
-      : "w-1/2 p-6 flex items-center justify-center relative bg-gradient-to-br from-white/90 to-yellow-100 rounded-l-2xl";
-  const contentSectionClasses =
-    screenCategory === "small"
-      ? "w-full p-8 flex flex-col items-center justify-center rounded-b-2xl"
-      : "w-1/2 p-8 flex flex-col items-center justify-center rounded-r-2xl";
+  const choiceTextClass =
+    screenCategory === "large"
+      ? "text-2xl md:text-3xl"
+      : screenCategory === "medium"
+      ? "text-2xl"
+      : "text-xl";
   const headingClass =
     screenCategory === "large"
       ? "text-4xl md:text-5xl"
       : screenCategory === "medium"
       ? "text-4xl"
       : "text-3xl";
-  const bodyTextClass =
+  const subheadingClass =
     screenCategory === "large"
-      ? "text-2xl"
+      ? "text-2xl md:text-3xl"
       : screenCategory === "medium"
       ? "text-2xl"
       : "text-xl";
-  const detailTextClass = screenCategory === "small" ? "text-lg" : "text-xl";
-  const buttonTextClass = screenCategory === "small" ? "text-xl" : "text-2xl";
+  const gridColumnsClass =
+    screenCategory === "small" ? "grid-cols-1" : "grid-cols-2";
+
+  // Determine which choice was already selected and which is available
+  const alreadySelectedChoice = selectedChoice === "good" ? goodChoice : badChoice;
+  const availableChoice = selectedChoice === "good" ? badChoice : goodChoice;
+  const isGoodAvailable = selectedChoice === "bad";
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center">
-      <div
-        className={`relative w-full max-w-5xl mx-auto flex ${containerDirection} rounded-3xl shadow-2xl bg-yellow-50 border-8 border-white`}
-        style={{ minHeight: "60vh" }}
-      >
-        {/* Left page: Illustration */}
-        <div className={imageSectionClasses.replace('bg-gradient-to-br from-white/90 to-yellow-100', 'bg-white/90')}>
-          <div className="relative w-full aspect-[4/3] flex items-center justify-center">
-            <ImageUrl
-              src={
-                otherChoice.selectedImageUrl ||
-                "/illustrations/STORY_PLACEHOLDER.svg"
-              }
-              alt="Other choice"
-              fill
-              className="object-contain rounded-3xl shadow-lg m-2"
-              sizes="50vw"
-            />
-          </div>
-        </div>
-        {/* Book spine */}
-        {screenCategory !== "small" && (
-          <div
-            className="w-2 bg-yellow-300 shadow-inner rounded-full mx-1"
-            style={{ minHeight: "70vh" }}
-          />
-        )}
-        {/* Right page: End message and button */}
-        <div className={contentSectionClasses}>
-          <div className="max-w-lg w-full text-center flex flex-col items-center justify-center gap-6">
-            <h2
-              className={`${headingClass} font-bold text-purple-800 mb-2`}
-              style={{
-                fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
-                textShadow: "2px 2px 4px rgba(0,0,0,0.1)",
-              }}
-              dir={isHebrewStory ? "rtl" : "ltr"}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="w-full h-full flex flex-col items-center justify-center p-6"
+    >
+      {!hasReadBothPaths ? (
+        <>
+          <motion.h2
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className={`${headingClass} font-bold text-center text-purple-800 mb-2`}
+            style={{
+              textShadow: "2px 2px 4px rgba(0,0,0,0.1)",
+              fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+            }}
+            dir={isHebrewStory ? "rtl" : "ltr"}
+          >
+            {theEnd}
+          </motion.h2>
+
+          <p
+            className={`${subheadingClass} text-purple-600 mb-8 text-center`}
+            style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }}
+            dir={isHebrewStory ? "rtl" : "ltr"}
+          >
+            {whatIf}
+          </p>
+
+          <div className={`grid ${gridColumnsClass} gap-8 max-w-6xl w-full`}>
+            {/* Good Choice Card */}
+            <motion.button
+              whileHover={isGoodAvailable ? { scale: 1.02 } : {}}
+              whileTap={isGoodAvailable ? { scale: 0.98 } : {}}
+              onClick={isGoodAvailable ? onTryOtherPath : undefined}
+              disabled={!isGoodAvailable}
+              className={`${
+                isGoodAvailable
+                  ? "bg-green-50 hover:bg-green-100 cursor-pointer"
+                  : "bg-gray-50 opacity-50 cursor-not-allowed"
+              } rounded-3xl p-6 text-left transition-all shadow-xl ${
+                isGoodAvailable ? "hover:shadow-2xl" : ""
+              }`}
             >
-              {theEnd}
-            </h2>
-            {!hasReadBothPaths ? (
-              <>
-                <p
-                  className={`${bodyTextClass} text-purple-600 mb-2`}
-                  style={{
-                    fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-6">
+                {goodImageLoading && (
+                  <div className="absolute inset-0 bg-green-100 animate-pulse flex items-center justify-center">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full"
+                    />
+                  </div>
+                )}
+                <ImageUrl
+                  src={
+                    goodImageError || !goodChoice.selectedImageUrl
+                      ? "/illustrations/STORY_GOOD_CHOICE.svg"
+                      : goodChoice.selectedImageUrl
+                  }
+                  alt="Good choice"
+                  fill
+                  className={`object-cover transition-opacity duration-300 ${
+                    goodImageLoading ? "opacity-0" : "opacity-100"
+                  } rounded-3xl m-2`}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  onError={() => {
+                    setGoodImageError(true);
+                    setGoodImageLoading(false);
                   }}
-                  dir={isHebrewStory ? "rtl" : "ltr"}
-                >
-                  {whatIf}
-                </p>
-                {/* <p
-                  className={`${detailTextClass} text-purple-900 mb-4`}
-                  style={{
-                    fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
-                  }}
-                  dir={isHebrewStory ? "rtl" : "ltr"}
-                >
-                  {otherChoice.storyText}
-                </p> */}
-                <button
-                  onClick={onTryOtherPath}
-                  className={`px-4 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white ${buttonTextClass} font-bold rounded-3xl shadow-lg transition-all`}
-                  style={{
-                    fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
-                  }}
-                >
-                  {otherChoice.storyText}
-                  {/* {isHebrewStory ? "נסה את המסלול השני ←" : "Try Other Path →"} */}
-                </button>
-              </>
-            ) : (
-              <p
-                className={`${bodyTextClass} text-purple-600`}
-                style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }}
-                dir={isHebrewStory ? "rtl" : "ltr"}
+                  onLoad={() => setGoodImageLoading(false)}
+                />
+              </div>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className={`${choiceTextClass} font-bold ${
+                  isGoodAvailable ? "text-green-700" : "text-gray-500"
+                } leading-relaxed`}
+                style={{
+                  textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
+                  fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+                  textAlign: isHebrewStory ? "right" : "left",
+                }}
               >
-                {congratsBothPaths}
-              </p>
-            )}
+                {goodChoice.storyText}
+              </motion.p>
+            </motion.button>
+
+            {/* Bad Choice Card */}
+            <motion.button
+              whileHover={!isGoodAvailable ? { scale: 1.02 } : {}}
+              whileTap={!isGoodAvailable ? { scale: 0.98 } : {}}
+              onClick={!isGoodAvailable ? onTryOtherPath : undefined}
+              disabled={isGoodAvailable}
+              className={`${
+                !isGoodAvailable
+                  ? "bg-blue-50 hover:bg-blue-100 cursor-pointer"
+                  : "bg-gray-50 opacity-50 cursor-not-allowed"
+              } rounded-3xl p-6 text-left transition-all shadow-xl ${
+                !isGoodAvailable ? "hover:shadow-2xl" : ""
+              }`}
+            >
+              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-6">
+                {badImageLoading && (
+                  <div className="absolute inset-0 bg-blue-100 animate-pulse flex items-center justify-center">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full"
+                    />
+                  </div>
+                )}
+                <ImageUrl
+                  src={
+                    badImageError || !badChoice.selectedImageUrl
+                      ? "/illustrations/STORY_BAD_CHOICE.svg"
+                      : badChoice.selectedImageUrl
+                  }
+                  alt="Bad choice"
+                  fill
+                  className={`object-cover transition-opacity duration-300 ${
+                    badImageLoading ? "opacity-0" : "opacity-100"
+                  } rounded-3xl m-2`}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  onError={() => {
+                    setBadImageError(true);
+                    setBadImageLoading(false);
+                  }}
+                  onLoad={() => setBadImageLoading(false)}
+                />
+              </div>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className={`${choiceTextClass} font-bold ${
+                  !isGoodAvailable ? "text-blue-700" : "text-gray-500"
+                } leading-relaxed`}
+                style={{
+                  textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
+                  fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+                  textAlign: isHebrewStory ? "right" : "left",
+                }}
+              >
+                {badChoice.storyText}
+              </motion.p>
+            </motion.button>
           </div>
-        </div>
-      </div>
-    </div>
+        </>
+      ) : (
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="text-center"
+        >
+          <h2
+            className={`${headingClass} font-bold text-purple-800 mb-4`}
+            style={{
+              textShadow: "2px 2px 4px rgba(0,0,0,0.1)",
+              fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+            }}
+            dir={isHebrewStory ? "rtl" : "ltr"}
+          >
+            {theEnd}
+          </h2>
+          <p
+            className="text-2xl text-purple-600"
+            style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }}
+            dir={isHebrewStory ? "rtl" : "ltr"}
+          >
+            {congratsBothPaths}
+          </p>
+        </motion.div>
+      )}
+    </motion.div>
   );
 };
 
@@ -1023,7 +1135,9 @@ const StoryReader = ({
               onTryOtherPath={() =>
                 onSelectChoice(selectedChoice === "good" ? "bad" : "good")
               }
-              otherChoice={selectedChoice === "good" ? badChoice! : goodChoice!}
+              goodChoice={goodChoice!}
+              badChoice={badChoice!}
+              selectedChoice={selectedChoice!}
               hasReadBothPaths={readPaths.size === 2}
               story={story}
               screenCategory={screenCategory}
@@ -1194,13 +1308,20 @@ const StoryReader = ({
 };
 
 export default function StoryReaderPage() {
-  const { storyId } = useParams();
+  const { storyId, kidId } = useParams();
   const router = useRouter();
   const { t } = useLanguage();
   const { currentUser } = useAuth();
-  const [story, setStory] = useState<Story | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { fetchKidById } = useKidsState();
+  // Core state
+  const { currentStory } = useStoryState();
+  const [story, setStory] = useState<Story | null>(currentStory?.id === String(storyId) ? currentStory : null);
+  const [kid, setKid] = useState<KidDetails | null>(null);
+  const [loading, setLoading] = useState(currentStory?.id === String(storyId) ? false : true);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const storyPageRefs = useRef<Record<string, StoryPageCardHandle | null>>({});
+  const autoGenerateTriggered = useRef(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedChoice, setSelectedChoice] = useState<
     "good" | "bad" | undefined
@@ -1225,6 +1346,11 @@ export default function StoryReaderPage() {
 
   // Reset all state when storyId changes (e.g., browser back button)
   useEffect(() => {
+    // If we already have the correct story loaded (e.g. from global state), don't reset
+    if (story && story.id === String(storyId)) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setStory(null);
@@ -1267,41 +1393,65 @@ export default function StoryReaderPage() {
     }
   }, [currentPage, selectedChoice, storyId, loading]);
 
+  const fetchStoryData = useCallback(async () => {
+    if (!storyId || !currentUser) return;
+
+    // If we already have the story from global state, we don't need to show loading
+    // But we might want to refresh it in the background or just use it if it's fresh
+    if (story && story.id === String(storyId)) {
+       setLoading(false);
+       
+       // Still need to fetch kid data if not present
+       if ((story.kidId || kidId) && !kid) {
+         const kidIdToUse = story.kidId || String(kidId);
+         const kidData = await fetchKidById(kidIdToUse);
+         if (kidData) setKid(kidData);
+       }
+       return;
+    }
+
+    if (!storyId) {
+      setError("Missing story ID");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setError(null);
+      const response = await StoryApi.getStoryById(String(storyId));
+
+      if (!response.success) {
+        throw new Error(response.error);
+      }
+
+      if (!response.data) {
+        throw new Error("Story not found");
+      }
+
+      const storyData = response.data;
+      if (!storyData) {
+        throw new Error("Story not found");
+      }
+
+      setStory(storyData);
+      
+      // Also fetch kid data if needed
+      if (storyData.kidId || kidId) {
+         const kidIdToUse = storyData.kidId || String(kidId);
+         const kidData = await fetchKidById(kidIdToUse);
+         if (kidData) setKid(kidData);
+      }
+    } catch (_err) {
+      console.error("Error fetching story:", _err);
+      setError("Failed to load story");
+    } finally {
+      setLoading(false);
+    }
+  }, [storyId, currentUser, kidId, fetchKidById, story, kid]);
+
   useEffect(() => {
-    const fetchStory = async () => {
-      if (!storyId) {
-        setError("Missing story ID");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await StoryApi.getStoryById(String(storyId));
-
-        if (!response.success) {
-          throw new Error(response.error);
-        }
-
-        if (!response.data) {
-          throw new Error("Story not found");
-        }
-
-        const storyData = response.data;
-        if (!storyData) {
-          throw new Error("Story not found");
-        }
-
-        setStory(storyData);
-      } catch (_err) {
-        console.error("Error fetching story:", _err);
-        setError("Failed to load story");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStory();
-  }, [storyId]);
+    fetchStoryData();
+  }, [fetchStoryData]);
 
   // Preload all story page images after story loads
   useEffect(() => {

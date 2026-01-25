@@ -279,6 +279,7 @@ const ShareKidDialog: FC<{
         emailPlaceholder: string;
         shareButton: string;
         sharing: string;
+        cancel: string;
         alreadyShared: string;
         shareSuccess: string;
         shareError: string;
@@ -437,7 +438,7 @@ const ShareKidDialog: FC<{
             {t.userCard.shareDialog.title}
           </DialogTitle>
           <DialogDescription>
-            {t.userCard.shareDialog.description}
+            {t.userCard.shareDialog.description.replace('{kidName}', kidName)}
           </DialogDescription>
         </DialogHeader>
         
@@ -463,13 +464,13 @@ const ShareKidDialog: FC<{
           </div>
         </div>
         
-        <DialogFooter>
+        <DialogFooter className="gap-2">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isSharing}
           >
-            Cancel
+            {t.userCard.shareDialog.cancel}
           </Button>
           <Button
             onClick={handleShare}

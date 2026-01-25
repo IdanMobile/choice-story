@@ -170,6 +170,10 @@ export default function CreateAStoryPage() {
     }
   };
 
+  const handleClose = () => {
+    router.push('/dashboard');
+  };
+
   // Authentication check
   useEffect(() => {
     if (!authLoading && !currentUser) {
@@ -355,7 +359,16 @@ export default function CreateAStoryPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container mx-auto px-4 py-8 max-w-6xl relative">
+      {/* Close button */}
+      <button
+        onClick={handleClose}
+        className="absolute top-4 right-4 rtl:right-auto rtl:left-4 w-10 h-10 rounded-full bg-white hover:bg-gray-100 border border-gray-200 shadow-sm flex items-center justify-center transition-colors"
+        aria-label="Close"
+      >
+        <X className="w-5 h-5 text-gray-600" />
+      </button>
+
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold mb-4">{t.createStory.title}</h1>
         <p className="text-gray-600 max-w-2xl mx-auto">
