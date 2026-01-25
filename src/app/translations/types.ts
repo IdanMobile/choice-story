@@ -13,6 +13,15 @@ export interface Translation {
     account: string;
     gallery: string;
     adminPanel: string;
+    newProfile: string;
+    library: string;
+    management: string;
+  };
+  logoutConfirmation: {
+    title: string;
+    message: string;
+    cancel: string;
+    confirm: string;
   };
   hero: {
     title: string;
@@ -189,6 +198,7 @@ export interface Translation {
       emailPlaceholder: string;
       shareButton: string;
       sharing: string;
+      cancel: string;
       alreadyShared: string;
       shareSuccess: string;
       shareError: string;
@@ -258,6 +268,7 @@ export interface Translation {
     loginButton: string;
     viewStories: string;
     sharedWithMe: string;
+    storiesOf: string;
   };
   storyActions: {
     title: string;
